@@ -36,3 +36,16 @@
 - 캡처: [경계](img/phase3-desktop.png), [타임라인](img/phase3-desktop-capture.png),
   [비교](img/phase3-desktop-compare.png), [모바일](img/phase3-mobile.png),
   [모바일 타임라인](img/phase3-mobile-capture.png), [모바일 비교](img/phase3-mobile-compare.png).
+
+## Phase 4
+
+- PASS: LLM은 엄격한 JSON 필터만 반환. 실제 조회와 문장 구성은 코드가 실행.
+- PASS: 방위·시간·기체·판정·룰 필터 검증. 모든 사실 문장에 이벤트 ID 표시.
+  문장은 조회 범위 내 원본 이벤트의 정규 문장과 정확히 대조한다.
+- PASS: 없는 ID, 범위 밖 ID, 원문과 다른 문장 차단을 네트워크 없는 모킹 테스트로 확인.
+- PASS: 버튼 클릭 때만 외부 호출, 브리핑과 세션 한도 5회 및 세션 캐시 공유.
+  세 예시는 현재 엔진 로그로 생성·캐시·재검증하며 외부 호출하지 않는다.
+- PASS: 1440×900 / 390×844 직접 검토. 넘침·겹침·빈 첫 결과 없음.
+- pytest **157 passed**, AppTest 포함; run_all S1~S9 기대값 일치.
+- 캡처: [데스크톱](img/phase4-desktop.png), [답변](img/phase4-desktop-answer.png),
+  [모바일](img/phase4-mobile.png), [모바일 답변](img/phase4-mobile-answer.png).

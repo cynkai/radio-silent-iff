@@ -25,6 +25,7 @@ from iff.briefing_panel import render_briefing
 from iff.operator_console import render_radar_detail, render_feed, render_alerts, advance_replay, reset_replay
 from iff.experiment_panel import render_experiments
 from iff.guide_tour import render_tour, start_tour
+from iff.operator_query_panel import render_operator_query
 
 st.set_page_config(page_title="IFF · 운용자 콘솔", layout="wide", initial_sidebar_state="collapsed")
 
@@ -125,6 +126,7 @@ with tab1:
     render_radar_detail(visible_events)
     render_feed(visible_events, alerts)
     render_briefing(visible_events, alerts)
+    render_operator_query(visible_events, alerts)
     with st.expander("표시 중인 원본 기록", expanded=False):
         events = visible_events
         for event in events:
