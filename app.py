@@ -23,6 +23,7 @@ from iff.console_style import apply_console_style
 from iff.console_charts import timeline_figure
 from iff.briefing_panel import render_briefing
 from iff.operator_console import render_radar_detail, render_feed, render_alerts, advance_replay, reset_replay
+from iff.experiment_panel import render_experiments
 
 st.set_page_config(page_title="IFF · 운용자 콘솔", layout="wide", initial_sidebar_state="collapsed")
 
@@ -45,6 +46,12 @@ st.warning("시뮬레이션 — 실기체·실채널 측정값이 아닙니다. 
            "표준 공개 암호 기법(HKDF/HMAC)을 사용하며 하드웨어는 없습니다.")
 st.title("IFF / 운용자 콘솔")
 st.caption("광학 인증 C1 · 기동 서명 C2  /  Radio-silent identification")
+workspace = st.radio("작업 공간", ["기존 시나리오", "공격 실험"], horizontal=True,
+                     index=1 if st.query_params.get("workspace") == "experiments" else 0)
+if workspace == "공격 실험":
+    with st.container(key="experiments"):
+        render_experiments()
+    st.stop()
 kpi_strip = st.container(key="kpi_strip")
 
 sb = st.sidebar

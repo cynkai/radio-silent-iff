@@ -87,3 +87,22 @@ p = random_match_prob = 0.00209045410156; 편대 오수락 = 1 − (1 − p)^m
 독립·균등 패턴 가정의 해석적 오수락이며 특정 S6 재현 실험의 성공률은 아니다. n=16, K=2. window를 주기적으로 갱신하는 조건이며 관측·재현 비용과 실제 운용 시간은 미측정.
 
 출처: list_size.csv:fleet_size,analytic_any_false_match,per_unit_prob; iff/maneuver.py:random_match_prob; iff/config.py:MANEUVER_BITS,MANEUVER_HAMMING_K,MANEUVER_WINDOW_S
+# 추가 실험: 샌드박스와 교전 트래픽
+
+`작업 공간 → 공격 실험`에서 직접 재현합니다. 기존 비용 모델 값은 유지하며,
+아래 값은 `python3 scripts/traffic.py --benign 200 --attacks 100 --seed 42`의 실험 결과입니다.
+금전·장비·연산 비용은 측정하지 않았습니다. 단일 시도 결과를 성공 확률로 해석하지 않습니다.
+
+| 공격 / 측정 조건 | 관측 결과 | 필요한 역량 / 한계 | 측정 출처 |
+|---|---|---|---|
+| 중계 25µs, 400m, BER=0, seed=42 | ACCEPT_FRIEND, RTT 79.214µs | 유효 응답을 예산 내 전달; 방어 실패 | out/traffic/sandbox.csv |
+| 중계 40µs, 같은 조건 | REJECT / RTT, 94.214µs | 같은 유효 태그여도 예산 초과 시 거부 | out/traffic/sandbox.csv |
+| 포획 후 1epoch, 미폐기 | ACCEPT_FRIEND, 54.214µs | 유예 중 유효 unit 키; 방어 실패 | out/traffic/sandbox.csv |
+| 포획 후 1epoch, 폐기 | REVOKED | 동일 키도 폐기 후 무효 | out/traffic/sandbox.csv |
+| 가짜 질의기 / 질의 재방송 | IQ_TAG / IQ_NONCE, 무응답 | 질의 태그 또는 미소비 nonce 필요 | out/traffic/sandbox.csv |
+| 혼합 N=200, M=100, BER=0 | ANY_RULE TP=75, FP=0, FN=25 | 공격 6종 무작위 혼합, 탐지율 75% | out/traffic/metrics.csv |
+| 동일 트래픽 BER=0.1 | ANY_RULE TP=63, FP=2, FN=37 | 응답 태그 손상; 오탐률 1% | out/traffic/ber_sweep.csv |
+
+탐지율 분모는 각 룰이 맡는 유형만이 아니라 전체 공격 100건입니다. 실제 운영 유병률이나
+공격 비용을 추정하지 않습니다. 정답 라벨은 탐지 후에만 결합하며, 룰에는 전달하지 않습니다.
+첫 실패 창을 반환하는 R5 특성상 오탐 곡선은 단조 증가를 보장하지 않습니다.

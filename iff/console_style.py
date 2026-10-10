@@ -37,6 +37,8 @@ def apply_console_style() -> None:
     .console-badge.neutral {{ color: var(--console-muted); }}
     .brief-unverified {{ color: var(--text-color); opacity: .6; }}
     .brief-finding {{ line-height: 1.6; word-break: keep-all; overflow-wrap: anywhere; }}
+    .st-key-experiments [data-testid="stCaptionContainer"] * {{
+        word-break: keep-all; overflow-wrap: anywhere; }}
     .st-key-situation_briefing [data-testid="stText"] span,
     .st-key-situation_briefing p {{ word-break: keep-all !important; overflow-wrap: anywhere; white-space: normal; }}
     .step {{ display: flex; justify-content: space-between; gap: .5rem;

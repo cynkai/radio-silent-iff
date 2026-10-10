@@ -1,0 +1,26 @@
+diff --git a/app.py b/app.py
+index 6faa3a2..0f44c0d 100644
+--- a/app.py
++++ b/app.py
+@@ -24,6 +24,21 @@ from iff.console_charts import timeline_figure
+ from iff.operator_console import render_radar_detail, render_feed, render_alerts, advance_replay, reset_replay
+ 
+ st.set_page_config(page_title="IFF · 운용자 콘솔", layout="wide", initial_sidebar_state="collapsed")
++
++
++@st.cache_resource
++def _ensure_sweeps():
++    """Cloud deploys start without out/ (gitignored); regenerate the sweep CSVs once."""
++    root = Path(__file__).resolve().parent
++    needed = ["relay_sweep.csv", "list_size.csv", "roc.csv"]
++    if not all((root / "out" / name).exists() for name in needed):
++        import subprocess
++        subprocess.run([sys.executable, str(root / "scripts" / "sweep_noise.py")],
++                       check=True, cwd=root, capture_output=True)
++    return True
++
++
++_ensure_sweeps()
+ apply_console_style()
+ st.warning("시뮬레이션 — 실기체·실채널 측정값이 아닙니다. "
+            "표준 공개 암호 기법(HKDF/HMAC)을 사용하며 하드웨어는 없습니다.")

@@ -20,7 +20,8 @@ https://github.com/changeroa/StyleGallery/blob/main/patterns/split-sidebar/suppo
 The Streamlit document owns page scrolling. Desktop uses a 2:1 radar/detail split,
 with a 3:2 event/alert split below; Streamlit columns stack at compact widths.
 At phone widths KPI values use a 2x2 grid and the document has 64px top clearance.
-Navigation stays in five tabs. Analysis controls live in the collapsible sidebar.
+The default workspace keeps five tabs. A native workspace radio opens the experiment
+workspace with red-team sandbox and engagement traffic tabs. Analysis controls live in the collapsible sidebar.
 KPI values and radar contacts use the visible event prefix during replay; scenario
 inspection uses the selected scenario. No fake offsets resolve overlapping contacts.
 The event selector and feed provide access to contacts at identical coordinates.
@@ -32,6 +33,14 @@ The timeline has separate S4/S8 lanes; x is verifier epoch, not fabricated elaps
 E+2 is a policy boundary annotation, never a synthetic EPOCH event.
 
 ## Accessibility and review constraints
+
+The experiment workspace reuses existing tokens, native form controls, radar and RTT
+charts. Forms submit explicitly; the last submitted configuration remains visible.
+Six pipeline rows distinguish passed, blocked and unreached stages, including all
+unreached stages for suppressed queries. An accepted attack has an explicit failure
+message and a README limits link. Traffic tables use evidence-event metrics, with a
+separate paired BER chart. No new color, motion or layout primitives are required.
+Briefings use an explicit generation button and a shared five-request session ledger.
 
 Decisions use text plus color, components use shape plus text, pipeline states use
 explicit symbols and labels. Controls retain Streamlit keyboard/focus behavior.
