@@ -1,0 +1,10 @@
+id: R8_FORGERY_BURST
+kind: window
+match:
+  decision: REJECT
+  reject_stage: TAG
+bearing_tolerance_deg: 10.0
+window_ns: 10000000000
+min_count: 5
+severity: medium
+message: 5+ TAG rejections in a narrow bearing sector within 10s; possible forgery burst.
