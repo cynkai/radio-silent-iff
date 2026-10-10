@@ -5,6 +5,9 @@ Reuse the existing dark surfaces, cyan actions and decision colors. Presets use 
 two-column button cluster that stacks on mobile. Results always come from the
 engine at runtime. Conditional input groups retain visible labels. Radial tick
 labels stay horizontal on the left, without a zero label at the origin.
+The tour uses a bordered explanation card, native previous/next/exit controls,
+and a progress bar. Each of nine scenes selects existing engine scenarios and
+reuses radar/detail; the captured-aircraft scene also highlights the timeline.
 
 The existing Streamlit dashboard supplies tabs, controls, data tables, and Plotly charts.
 The redesign prioritizes an event-backed radar and inspection pane over repeated pipeline charts.

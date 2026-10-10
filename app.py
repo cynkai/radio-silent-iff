@@ -24,6 +24,7 @@ from iff.console_charts import timeline_figure
 from iff.briefing_panel import render_briefing
 from iff.operator_console import render_radar_detail, render_feed, render_alerts, advance_replay, reset_replay
 from iff.experiment_panel import render_experiments
+from iff.guide_tour import render_tour, start_tour
 
 st.set_page_config(page_title="IFF · 운용자 콘솔", layout="wide", initial_sidebar_state="collapsed")
 
@@ -50,6 +51,7 @@ st.markdown('<div class="masthead"><div class="disclosure">시뮬레이션 — �
 
 
 def navigate_console(workspace: str, tab: str, mode: str) -> None:
+    st.session_state.tour_active = False
     st.session_state.workspace = workspace
     st.session_state.console_tab = tab
     st.session_state.view_mode = mode
@@ -58,8 +60,7 @@ def navigate_console(workspace: str, tab: str, mode: str) -> None:
 with st.container(key="quick_guide"):
     guide = st.columns([.7, 2, 2, 2], vertical_alignment="center")
     guide[0].caption("이렇게 보세요")
-    guide[1].button("① 공격 재생으로 S1~S9 보기", width="stretch", on_click=navigate_console,
-                    args=("기존 시나리오", "① 운용자 콘솔", "공격 재생"))
+    guide[1].button("① 3분 가이드 투어", width="stretch", on_click=start_tour)
     guide[2].button("② 공격 실험에서 직접 공격", width="stretch", on_click=navigate_console,
                     args=("공격 실험", "① 운용자 콘솔", "전체 기록"))
     guide[3].button("③ 한계 분석 확인", width="stretch", on_click=navigate_console,
@@ -70,6 +71,9 @@ workspace = st.radio("작업 공간", ["기존 시나리오", "공격 실험"], 
 if workspace == "공격 실험":
     with st.container(key="experiments"):
         render_experiments()
+    st.stop()
+if st.session_state.get("tour_active", False):
+    render_tour()
     st.stop()
 kpi_strip = st.container(key="kpi_strip")
 

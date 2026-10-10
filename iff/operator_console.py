@@ -55,7 +55,7 @@ def render_pipeline(event: Event) -> None:
         st.plotly_chart(rtt_figure(event), width="stretch", key="rtt_gauge")
 
 
-def render_radar_detail(events: Sequence[Event]) -> None:
+def render_radar_detail(events: Sequence[Event], *, selection_key: str = "event_selection") -> None:
     radar, detail = st.columns([2, 1], gap="large")
     with radar:
         st.subheader("접촉 현황")
@@ -71,7 +71,7 @@ def render_radar_detail(events: Sequence[Event]) -> None:
                               if event.scenario == "S4" and event.reject_stage == "REVOKED"), len(events) - 1)
         index = st.selectbox("이벤트 선택", range(len(events)), index=default_index,
                              format_func=lambda i: f"#{i + 1} · {events[i].scenario} · "
-                             f"{events[i].reject_stage or events[i].decision}", key="event_selection")
+                             f"{events[i].reject_stage or events[i].decision}", key=selection_key)
         event = events[index]
         st.markdown(f'<div class="mono alert-original">{escape(event.component)} · unit '
                     f'{escape(event.unit_id)} · epoch {event.epoch}</div>', unsafe_allow_html=True)
