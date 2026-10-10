@@ -1,6 +1,6 @@
-"""Radio-silent IFF — simulation dashboard (D4D x EDTH, Track 1 / Problem 04).
+"""Radio-silent IFF simulation dashboard.
 
-Run:  streamlit run app.py
+Run: python3 -m streamlit run app.py
 """
 import os
 import sys
@@ -12,122 +12,94 @@ import streamlit as st
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from iff import scenarios, detect, config, channel  # noqa: E402
-from iff.events import to_dicts  # noqa: E402
-from iff.maneuver import (expected_bits, generate_yaw_series, observe,  # noqa: E402
+from iff import scenarios, detect, config, channel
+from iff.events import to_dicts
+from iff.maneuver import (expected_bits, generate_yaw_series, observe,
                           recover_bits, hamming, random_match_prob)
-from iff.protocol import Interrogator, make_response  # noqa: E402
+from iff.protocol import Interrogator, make_response
 from iff.attacker_cost import captured_window_text
 from iff.attacker_cost_panel import render_attacker_cost_panel
+from iff.console_style import apply_console_style
+from iff.console_charts import timeline_figure
+from iff.operator_console import render_radar_detail, render_feed, render_alerts, advance_replay, reset_replay
 
-st.set_page_config(page_title="Radio-silent IFF — simulation", layout="wide")
+st.set_page_config(page_title="IFF · 운용자 콘솔", layout="wide", initial_sidebar_state="collapsed")
+apply_console_style()
+st.warning("시뮬레이션 — 실기체·실채널 측정값이 아닙니다. "
+           "표준 공개 암호 기법(HKDF/HMAC)을 사용하며 하드웨어는 없습니다.")
+st.title("IFF / 운용자 콘솔")
+st.caption("광학 인증 C1 · 기동 서명 C2  /  Radio-silent identification")
+kpi_strip = st.container(key="kpi_strip")
 
-st.warning("⚠️ 시뮬레이션 — 실기체·실채널 측정값이 아닙니다. "
-           "모든 암호는 표준 공개 기법(HKDF/HMAC, RFC 5869)이며 하드웨어는 없습니다.")
-st.title("전파 최소화 피아식별(IFF) — 2-컴포넌트 시뮬레이션")
-
-# ---- sidebar ----
 sb = st.sidebar
-sb.header("파라미터")
+sb.header("분석 파라미터")
 seed = sb.number_input("시드", value=42, step=1)
 d_max = sb.slider("d_max (m)", 500, 5000, int(config.DEFAULT_D_MAX_M), 100)
 sigma = sb.slider("관측 노이즈 σ (deg)", 0.0, 80.0, 5.0, 1.0)
 K = sb.slider("해밍 허용치 K", 0, 6, config.MANEUVER_HAMMING_K)
 budget = config.rtt_budget_ns(d_max)
-sb.caption(f"RTT 예산 ≈ {budget/1000:.1f} µs  (= 2·d_max/c + 처리 {config.ASSUMPTION_PROC_MAX_NS/1000:.0f} µs)")
+sb.caption(f"한계 분석 RTT 예산 ≈ {budget/1000:.1f} µs")
+sb.caption("시드 외 실험 파라미터는 한계 분석용입니다. 콘솔은 시나리오의 기본 설정을 표시합니다.")
 
-STAGES = ["FORMAT", "EPOCH", "REVOKED", "NONCE", "TAG", "RTT"]
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["① 시나리오 실행", "② 이벤트 로그",
-                                  "③ 포획 기체", "④ 한계 분석", "⑤ 공격자 비용"])
+results = scenarios.run_all(seed=seed, include_grace=True)
+all_events = [event for result in results.values() for event in result["events"]]
+if st.session_state.get("replay_seed") != seed:
+    st.session_state.replay_seed = seed
+    st.session_state.replay_index = 0
 
+tab1, tab2, tab3, tab4, tab5 = st.tabs(
+    ["① 운용자 콘솔", "② 이벤트 로그", "③ 포획 기체", "④ 한계 분석", "⑤ 공격자 비용"])
 
-def pipeline_figure(reject_stage, component="C1"):
-    stages = STAGES if component == "C1" else ["관측", "비트복원", "해밍≤K"]
-    colors = []
-    hit = False
-    for s in stages:
-        if reject_stage is None:
-            colors.append("#2e7d32")
-        elif s == reject_stage or (component == "C2" and s == "해밍≤K" and reject_stage == "C2_HAMMING"):
-            colors.append("#c62828"); hit = True
-        elif hit:
-            colors.append("#424242")
-        else:
-            colors.append("#2e7d32")
-    fig = go.Figure(go.Bar(x=stages, y=[1] * len(stages), marker_color=colors,
-                           text=stages, textposition="inside"))
-    fig.update_layout(height=160, showlegend=False, yaxis=dict(visible=False),
-                      margin=dict(l=10, r=10, t=10, b=10))
-    return fig
-
-
-# ---------------- Tab 1 ----------------
 with tab1:
-    scenario_functions = {**scenarios.ALL, "S8": scenarios.s8_captured_key_grace}
-    scn = st.selectbox("시나리오", list(scenario_functions),
-                       format_func=lambda s: {
-                           "S1": "S1 — 정상 아군", "S2": "S2 — 재전송",
-                           "S3": "S3 — 중계 MITM", "S4": "S4 — 포획 기체",
-                           "S5": "S5 — 무작위 위조", "S6": "S6 — 기동 재현(C2)",
-                           "S7": "S7 — 복제 기체", "S8": "S8 — 포획 키 유예와 폐기"}[s])
-    rng = np.random.default_rng(seed)
-    events, expected = scenario_functions[scn](rng)
-    for i, e in enumerate(events):
-        c1, c2 = st.columns([2, 3])
-        with c1:
-            st.markdown(f"**이벤트 {i+1}** · {e.note}")
-            st.write({"decision": e.decision, "reject_stage": e.reject_stage,
-                      "unit_id": e.unit_id, "epoch": e.epoch,
-                      "nonce": e.nonce_hex or "(C2 — nonce 없음)",
-                      "rtt_µs": round(e.rtt_ns / 1000, 2) if e.rtt_ns else None})
-        with c2:
-            st.plotly_chart(pipeline_figure(e.reject_stage, e.component),
-                            use_container_width=True, key=f"pipe_{scn}_{i}")
-    ok = [(e.decision, e.reject_stage) for e in events] == expected
-    if ok:
-        st.success(f"기대 결과와 일치: {ok}")
+    scn = st.selectbox("시나리오", list(results), key="scenario")
+    mode = st.radio("표시 범위", ["전체 기록", "공격 재생", "선택 시나리오"], horizontal=True, key="view_mode")
+    if mode == "공격 재생":
+        next_column, reset_column, progress_column = st.columns([1, 1, 4])
+        next_column.button("다음", key="replay_next", disabled=st.session_state.replay_index >= len(all_events),
+                           on_click=advance_replay, args=(len(all_events),))
+        reset_column.button("초기화", key="replay_reset", on_click=reset_replay)
+        progress_column.caption(f"S1 → S8 · {st.session_state.replay_index} / {len(all_events)} 이벤트")
+        visible_events = all_events[:st.session_state.replay_index]
+    elif mode == "선택 시나리오":
+        visible_events = results[scn]["events"]
     else:
-        st.error("기대 결과 불일치")
+        visible_events = all_events
+    alerts = detect.run_rules(to_dicts(visible_events), revoked_hex=[scenarios.CAP.hex()])
+    with kpi_strip:
+        metrics = st.columns(4)
+        metrics[0].metric("질의 수", len(visible_events), help="표시된 이벤트 수입니다. C2 관측 판정도 포함합니다.")
+        metrics[1].metric("수락", sum(event.decision == "ACCEPT_FRIEND" for event in visible_events))
+        metrics[2].metric("거부", sum(event.decision == "REJECT" for event in visible_events))
+        metrics[3].metric("high 경보", sum(alert["severity"] == "high" for alert in alerts))
+    render_radar_detail(visible_events)
+    render_feed(visible_events, alerts)
+    with st.expander("선택 시나리오 원본 기록", expanded=False):
+        rng = np.random.default_rng(seed)
+        scenario_functions = {**scenarios.ALL, "S8": scenarios.s8_captured_key_grace}
+        events, expected = scenario_functions[scn](rng)
+        for event in events:
+            st.json(to_dicts([event])[0])
+        if [(event.decision, event.reject_stage) for event in events] == expected:
+            st.success("기대 결과와 일치: True")
+        else:
+            st.error("기대 결과 불일치")
 
-
-# ---------------- Tab 2 ----------------
 with tab2:
-    results = scenarios.run_all(seed=seed, include_grace=True)
-    all_events = [e for r in results.values() for e in r["events"]]
-    df = pd.DataFrame(to_dicts(all_events))[
-        ["scenario", "component", "decision", "reject_stage",
-         "unit_id", "epoch", "bearing_deg", "range_m", "rtt_ns", "note"]]
-    st.dataframe(df, use_container_width=True, height=320)
-    st.subheader("탐지 경보")
-    alerts = detect.run_rules(to_dicts(all_events), revoked_hex=[scenarios.CAP.hex()], d_max_m=d_max)
-    sev_color = {"high": "🔴", "medium": "🟠", "low": "🟡"}
-    for a in alerts:
-        st.markdown(f"{sev_color.get(a['severity'],'⚪')} **{a['rule']}** "
-                    f"({a['severity']}) — {a['message']}")
+    st.subheader("표시 중인 이벤트 로그")
+    st.caption("콘솔의 표시 범위와 공격 재생 단계에 연동됩니다.")
+    st.dataframe(to_dicts(visible_events), width="stretch", hide_index=True)
+    render_alerts(alerts)
 
-
-# ---------------- Tab 3 ----------------
 with tab3:
-    st.subheader("포획된 아군 기체 대응 타임라인")
-    rng = np.random.default_rng(seed)
-    events, _ = scenarios.s4_captured_unit(rng)
-    steps = ["정상 운용 (키 보유)", "포획 → 아군 응답 ACCEPT (위험 구간)",
-             "운영자 폐기 등록", "폐기된 unit 재응답 → REVOKED + R3 경보",
-             "epoch 회전 → 신규 키 없음 → TAG 실패"]
-    labels = ["ACCEPT_FRIEND", "REVOKED", "TAG"]
-    st.markdown("1. **" + steps[0] + "**")
-    st.markdown("2. **" + steps[1] + f"** — `{events[0].decision}`")
-    st.markdown("3. **" + steps[2] + "**")
-    st.markdown("4. **" + steps[3] + f"** — `{events[1].decision}/{events[1].reject_stage}`")
-    st.markdown("5. **" + steps[4] + f"** — `{events[2].decision}/{events[2].reject_stage}`")
-    alerts = detect.run_rules(to_dicts(events), revoked_hex=[scenarios.CAP.hex()], d_max_m=d_max)
-    for a in alerts:
-        if a["rule"] == "R3_REVOKED_UNIT_ACTIVE":
-            st.error(f"🔴 {a['rule']} — {a['message']}")
+    st.subheader("포획 키 / epoch 타임라인")
+    captured_events = [*results["S4"]["events"], *results["S8"]["events"]]
+    st.plotly_chart(timeline_figure(captured_events), width="stretch", key="epoch_timeline")
     st.info(captured_window_text())
-    st.caption("S4의 TAG 거부는 새 epoch를 주장하면서 이전 키로 서명한 경우입니다. "
-               "이전 epoch를 그대로 제시하는 유예 수락과 즉시 폐기는 S8에서 확인합니다.")
-
+    st.caption("S4는 새 epoch를 주장하며 옛 키로 서명해 TAG에서 거부됩니다. "
+               "S8은 E+1 검증기가 이전 epoch 응답을 수락한 뒤 폐기 시 REVOKED로 거부합니다.")
+    st.caption("EPOCH는 유예 종료 규칙의 경계 표시입니다. S4·S8에 EPOCH 거부 이벤트는 없습니다. "
+               "같은 epoch의 응답은 행으로 구분하며, 위치는 실제 경과시간을 뜻하지 않습니다.")
+    render_alerts(detect.run_rules(to_dicts(captured_events), revoked_hex=[scenarios.CAP.hex()]))
 
 # ---------------- Tab 4 ----------------
 with tab4:

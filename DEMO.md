@@ -1,13 +1,13 @@
 # 3분 시연 스크립트
 
-사전 준비: `streamlit run app.py` 띄워두고, 터미널 하나 열어둠.
+사전 준비: `python3 -m streamlit run app.py` 띄워두고, 터미널 하나 열어둠.
 
 **0:00 — 한 줄 프레이밍 (터미널)**
 > "전파를 거의 안 쓰고 아군·적 드론을 구분하는 인증 프로토콜입니다. 암호는 전부
 > 표준 공개 기법이고, 제가 푼 건 재전송·중계·포획 기체를 어디서 어떻게 걸러내느냐입니다."
 
 ```bash
-python scripts/run_all.py --seed 42
+python3 scripts/run_all.py --seed 42
 ```
 → S1~S8이 기대 결과와 100% 일치, R1·R3·R4 경보 발생을 한 화면에 보여줌.
 
@@ -65,4 +65,4 @@ python3 scripts/run_all.py --seed 42
 **⑤ 공격자 비용**에서 S3을 선택해 지연별 성공률과 약 31µs의 명목 경계를 보여준다.
 S4를 선택해 폐기 전 조건부 수락, grace 포함 최대 약 1,200초, 폐기 후 즉시 0을 보여준다.
 시나리오 탭의 S8로 grace 수락과 즉시 폐기를 확인한다.
-CSV 다운로드와 `out/attacker_cost.md`는 같은 모델 데이터를 담는다.
+CSV 다운로드와 [공격자 비용 설명](docs/attacker_cost.md)은 같은 모델 데이터를 담는다.

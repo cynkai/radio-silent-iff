@@ -1,12 +1,10 @@
-#!/usr/bin/env -S uv run --script
+#!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.11"
 # dependencies = ["numpy==2.5.3", "PyYAML==6.0.3"]
 # ///
 # How to run:
 #   python3 scripts/demo_r6.py (repository dependencies installed)
-#   uv run scripts/demo_r6.py
-# Install uv if needed: curl -LsSf https://astral.sh/uv/install.sh | sh
 
 from __future__ import annotations
 
