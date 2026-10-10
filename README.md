@@ -160,3 +160,41 @@ nonce 캐시는 프로세스 메모리에 있으므로 재시작 시의 영속 �
 테스트를 본 해커톤 기간에 신규 개발했습니다. 기존 코드·사전 작업물은 없습니다.
 
 [MIT License](LICENSE) · [시연 안내](DEMO.md)
+
+## LLM 경보 브리핑
+
+운용자 콘솔 맨 위의 **상황 브리핑**은 기존 경보를 해석합니다.
+**LLM은 판정에 관여하지 않는다.** 식별·룰 엔진·시나리오·기대값에는 연결되지 않으며,
+이벤트 ID, unit_id, reject_stage, 경보 룰과 심각도만 JSON으로 전송합니다.
+[OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=chat)로
+`{summary, findings:[{text, evidence_event_ids, rule}], recommendations:[...]}` 응답을 받습니다.
+
+Streamlit Community Cloud의 앱 Settings → Secrets 또는 로컬 `.streamlit/secrets.toml`에 설정하세요.
+아래 키 값은 설명용 자리표시자입니다. 실제 키를 소스나 커밋에 넣지 마세요.
+
+```toml
+OPENAI_API_KEY = "YOUR_API_KEY"
+OPENAI_MODEL = "gpt-4o-mini"
+```
+
+동일 이름의 환경변수도 지원하며 Secrets가 우선합니다. 모델 기본값은 `gpt-4o-mini`입니다.
+키와 `.env` 파일은 gitignore 대상입니다. 키는 캐시 인자나 로그에 기록하지 않습니다.
+컨텍스트 SHA-256 해시와 모델별 `st.cache_data` 메모리 캐시(최대 128개)를 사용합니다.
+같은 컨텍스트는 캐시 유지 중 재호출하지 않으며, 실패 결과도 캐시합니다.
+모델 변경·캐시 초기화·서버 재시작·캐시 항목 퇴출 후에는 다시 호출될 수 있습니다.
+
+각 finding의 이벤트 ID·실제 경보 룰·텍스트 속 unit_id를 결정론적으로 검사합니다.
+기체 언급은 `unit_id=<ID>` 형식을 사용하며 8자리 hex 단독 언급도 검사합니다.
+실패한 finding은 **근거 없음**과 회색 취소선으로 표시됩니다. 근거 ID를 누르면 기존 상세 패널이 선택됩니다.
+검증 n/m은 참조 존재 여부이며 해석의 의미적 정확성 보증은 아닙니다. 요약·권고는 집계 밖입니다.
+기존 경보 근거가 타임스탬프이므로 중복 시각은 복수 이벤트 후보로 전달됩니다.
+
+키가 없거나 API 호출·응답 검증이 실패하면 `docs/sample_brief.json`을 **캐시된 예시**로 표시합니다.
+이는 seed=42 전체 로그에서 오프라인으로 생성한 예시이며 실시간 LLM 응답으로 가장하지 않습니다.
+예시도 현재 표시 로그로 재검증하므로 다른 시나리오나 시드에서는 근거 없음이 표시될 수 있습니다.
+생성·검증은 네트워크 없이 재현됩니다:
+
+```bash
+python3 scripts/make_sample_brief.py
+python3 -m pytest -q
+```

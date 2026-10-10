@@ -1,0 +1,30 @@
+{
+  "summary": "중계 의심, 폐기 기체 활동, 질의 인증 경보를 우선 검토하세요.",
+  "findings": [
+    {
+      "text": "unit_id=0000000a · RTT 단계 거부와 중계 의심 경보가 기록되었습니다.",
+      "evidence_event_ids": [
+        "E-72fae1b7b569"
+      ],
+      "rule": "R2_RELAY_SUSPECT"
+    },
+    {
+      "text": "unit_id=0000000c · 폐기 기체 활동 경보와 REVOKED 거부 기록을 확인하세요.",
+      "evidence_event_ids": [
+        "E-8ec09f797749"
+      ],
+      "rule": "R3_REVOKED_UNIT_ACTIVE"
+    },
+    {
+      "text": "unit_id=0000000a · 질의 인증 관련 경보가 기록되었습니다.",
+      "evidence_event_ids": [
+        "E-91fc524c006b"
+      ],
+      "rule": "R7_ROGUE_INTERROGATOR"
+    }
+  ],
+  "recommendations": [
+    "근거 이벤트의 상세 패널과 원본 경보를 함께 확인하세요.",
+    "이 해석으로 식별 판정이나 인증 설정을 자동 변경하지 마세요."
+  ]
+}

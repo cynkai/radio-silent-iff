@@ -21,6 +21,7 @@ from iff.attacker_cost import captured_window_text
 from iff.attacker_cost_panel import render_attacker_cost_panel
 from iff.console_style import apply_console_style
 from iff.console_charts import timeline_figure
+from iff.briefing_panel import render_briefing
 from iff.operator_console import render_radar_detail, render_feed, render_alerts, advance_replay, reset_replay
 
 st.set_page_config(page_title="IFF · 운용자 콘솔", layout="wide", initial_sidebar_state="collapsed")
@@ -66,6 +67,7 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(
     ["① 운용자 콘솔", "② 이벤트 로그", "③ 포획 기체", "④ 한계 분석", "⑤ 공격자 비용"])
 
 with tab1:
+    briefing_card = st.container()
     mode = st.radio("표시 범위", ["전체 기록", "공격 재생", "선택 시나리오"], horizontal=True, key="view_mode")
     scn = st.selectbox("시나리오", list(results), key="scenario") if mode == "선택 시나리오" else None
     if mode == "공격 재생":
@@ -80,6 +82,8 @@ with tab1:
     else:
         visible_events = all_events
     alerts = detect.run_rules(to_dicts(visible_events), revoked_hex=[scenarios.CAP.hex()])
+    with briefing_card:
+        render_briefing(visible_events, alerts)
     with kpi_strip:
         metrics = st.columns(4)
         metrics[0].metric("질의 수", len(visible_events), help="표시된 이벤트 수입니다. C2 관측 판정도 포함합니다.")

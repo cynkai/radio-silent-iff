@@ -4,3 +4,4 @@ streamlit==1.65.0
 plotly==7.1.0
 pytest==9.1.1
 PyYAML==6.0.3
+openai==2.45.0

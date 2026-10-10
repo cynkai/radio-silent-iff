@@ -71,3 +71,11 @@ Use Streamlit's existing theme surfaces and component borders without added shad
 ## 8. Accessibility and scope
 Preserve the framework's semantic controls. Verify the cost panel at phone and desktop sizes in both themes.
 Existing unrelated dashboard styling is outside this feature's scope.
+
+## Situation briefing
+The console starts with a native bordered Streamlit container for interpretation only.
+Use existing badge tokens, wrapping body text, and tertiary buttons as evidence links.
+Unverified findings use the secondary text token plus strikethrough and an explicit label.
+Evidence selection updates the existing detail selector without advancing replay.
+Cached examples are explicitly labeled; verification always uses the visible logs.
+Summary and recommendations are labeled as interpretation outside the finding count.
