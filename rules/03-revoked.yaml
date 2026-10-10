@@ -1,0 +1,7 @@
+id: R3_REVOKED_UNIT_ACTIVE
+kind: event
+cases:
+  - match:
+      reject_stage: REVOKED
+    severity: high
+    message: "Revoked unit {unit_id} still transmitting (captured aircraft in use)."

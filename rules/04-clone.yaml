@@ -1,0 +1,10 @@
+id: R4_CLONE_SUSPECT
+kind: pair
+match:
+  decision: ACCEPT_FRIEND
+group_by: [unit_id, epoch]
+difference_gt:
+  bearing_deg: 20.0
+  range_m: 500.0
+severity: high
+message: "Unit {unit_id} accepted at two incompatible positions."

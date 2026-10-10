@@ -1,0 +1,9 @@
+id: R5_FAILURE_BURST
+kind: window
+match:
+  decision: REJECT
+bearing_tolerance_deg: 10.0
+window_ns: 60000000000
+min_count: 3
+severity: medium
+message: 3+ rejects in a narrow bearing sector within 60s.

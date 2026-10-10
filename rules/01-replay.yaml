@@ -1,0 +1,7 @@
+id: R1_REPLAY_ATTEMPT
+kind: event
+cases:
+  - match:
+      reject_stage: NONCE
+    severity: medium
+    message: Response bound to a non-pending nonce (replay).

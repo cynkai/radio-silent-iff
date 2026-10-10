@@ -1,0 +1,12 @@
+id: R2_RELAY_SUSPECT
+kind: event
+cases:
+  - match:
+      reject_stage: RTT
+    severity: high
+    message: Round-trip time exceeded distance budget.
+  - match:
+      decision: ACCEPT_FRIEND
+    rtt_above_budget_fraction: 0.9
+    severity: low
+    message: Accepted but RTT within 10% of budget ceiling.

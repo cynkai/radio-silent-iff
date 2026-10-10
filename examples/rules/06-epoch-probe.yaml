@@ -1,0 +1,10 @@
+id: R6_STALE_KEY_PROBE
+kind: window
+match:
+  decision: REJECT
+  reject_stage: EPOCH
+bearing_tolerance_deg: 10.0
+window_ns: 10000000000
+min_count: 3
+severity: medium
+message: "Repeated EPOCH rejections within 10s; possible probing with stale keys."
