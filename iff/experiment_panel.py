@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from .briefing_panel import render_briefing
+from .deep_sandbox import render_deep_sandbox
 from .experiment_presets import render_presets
 from .console_charts import radar_figure, rtt_figure
 from .console_style import ACCENT, GRID, PANEL, TEXT
@@ -131,11 +132,13 @@ def render_traffic() -> None:
 
 
 def render_experiments() -> None:
-    sandbox, traffic = st.tabs(["레드팀 샌드박스", "교전 트래픽"])
+    sandbox, traffic, deep = st.tabs(["레드팀 샌드박스", "교전 트래픽", "샌드박스 심화"])
     with sandbox:
         render_sandbox()
     with traffic:
         render_traffic()
+    with deep:
+        render_deep_sandbox()
     if st.query_params.get("limits") == "1":
         st.header("README · 가정과 한계", anchor="experiment-limits")
         readme = (Path(__file__).resolve().parents[1] / "README.md").read_text(encoding="utf-8")

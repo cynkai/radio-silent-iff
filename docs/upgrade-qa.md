@@ -25,3 +25,14 @@
 - 캡처: [S1](img/phase2-scene3.png), [포획](img/phase2-scene6.png),
   [한계](img/phase2-scene9.png), [모바일](img/phase2-mobile.png),
   [모바일 상세](img/phase2-mobile-detail.png).
+
+## Phase 3
+
+- PASS: 201개 지연 입력을 실제 엔진으로 sweep. 현재점과 예산−기본 왕복 경계 표시.
+- PASS: epoch·폐기 시점 변경에 따라 엔진의 수락/거부 구간과 선택 판정 갱신.
+- PASS: 두 설정을 독립 실행하고 6단계 파이프라인 비교. 모바일에서는 세로 배치.
+- PASS: 1440×900, 390×844 캡처를 직접 확인. 가로 넘침·라벨 겹침·빈 결과 없음.
+- pytest **143 passed** (AppTest 포함), run_all S1~S9 기대값 일치.
+- 캡처: [경계](img/phase3-desktop.png), [타임라인](img/phase3-desktop-capture.png),
+  [비교](img/phase3-desktop-compare.png), [모바일](img/phase3-mobile.png),
+  [모바일 타임라인](img/phase3-mobile-capture.png), [모바일 비교](img/phase3-mobile-compare.png).

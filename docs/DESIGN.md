@@ -110,3 +110,8 @@ Unverified findings use the secondary text token plus strikethrough and an expli
 Evidence selection updates the existing detail selector without advancing replay.
 Cached examples are explicitly labeled; verification always uses the visible logs.
 Summary and recommendations are labeled as interpretation outside the finding count.
+
+## 심화 실험
+
+기존 실험 탭에 심화 탭을 추가한다. 경계 sweep은 시안 선과 현재 판정색 점,
+포획 구간은 수락 초록·거부 빨강을 사용한다. 모바일 비교 열은 세로로 쌓는다.
