@@ -4,7 +4,7 @@ assert actual == expected without anyone editing expectations to pass.
 """
 import numpy as np
 from . import crypto, channel, attacks, config
-from .protocol import Interrogator, Response, make_response
+from .protocol import Challenge, Interrogator, Responder, Response, make_response
 from .events import Event
 from .maneuver import (expected_bits, generate_yaw_series, observe,
                        recover_bits, hamming)
@@ -201,10 +201,23 @@ ALL = {
 }
 
 
-def run_all(seed=42, *, include_grace=False):
+def s9_rogue_interrogator(rng: np.random.Generator) -> tuple[list[Event], list[tuple[str, str | None]]]:
+    drone = Responder(FRIEND, EPOCH, {EPOCH: crypto.iq_key(MASTER_KEY, EPOCH)},
+                      {EPOCH: crypto.unit_key(MASTER_KEY, EPOCH, FRIEND)})
+    fake = Challenge(rng.bytes(config.NONCE_BYTES), 1_000_000, "ROGUE", EPOCH)
+    drone.respond(fake, t_recv_ns=1_000_000, scenario="S9a", bearing_deg=280, range_m=600)
+    recorded = _iq(rng).issue(rng.bytes(config.NONCE_BYTES), 2_000_000)
+    drone.respond(recorded, t_recv_ns=2_000_000, scenario="S9", bearing_deg=310, range_m=700)
+    drone.respond(recorded, t_recv_ns=3_000_000, scenario="S9b", bearing_deg=310, range_m=700)
+    return drone.events, [("NO_RESPONSE", "IQ_TAG"), ("NO_RESPONSE", "IQ_NONCE")]
+
+
+def run_all(seed=42, *, include_grace=False, include_rogue=False):
     rng = np.random.default_rng(seed)
     results = {}
     selected = {**ALL, "S8": s8_captured_key_grace} if include_grace else ALL
+    if include_rogue:
+        selected = {**selected, "S9": s9_rogue_interrogator}
     for name, fn in selected.items():
         events, expected = fn(rng)
         actual = [(e.decision, e.reject_stage) for e in events]

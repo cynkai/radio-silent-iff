@@ -13,14 +13,14 @@ def render_attacker_cost_panel(out_dir: Path) -> None:
     st.write("성공 확률은 조건부 수락 또는 해석적 오수락입니다. 유도할 수 없는 숫자는 비워 두고 미측정으로 표시합니다.")
     st.download_button("공격자 비용 CSV 다운로드", cost_csv(rows), "attacker_cost.csv", "text/csv")
     overview = []
-    for scenario in ("S2", "S3", "S4", "S5", "S6"):
+    for scenario in ("S2", "S3", "S4", "S5", "S6", "S9"):
         first = next(row for row in rows if row.scenario == scenario)
         success = {"S3": "지연별 상세표", "S4": "폐기 전 조건부 1 / 폐기 후 0",
                    "S6": "편대 크기별 상세표"}.get(scenario, probability_text(first))
         overview.append({"공격": f"{scenario} {first.attack}", "성공 확률": success,
                          "필요 역량": first.capability, "유효 시간": first.valid_window})
     st.dataframe(overview, hide_index=True, width="stretch")
-    selected = st.selectbox("공격별 유도와 출처", ["S2", "S3", "S4", "S5", "S6"], index=1,
+    selected = st.selectbox("공격별 유도와 출처", ["S2", "S3", "S4", "S5", "S6", "S9"], index=1,
                             key="cost_attack")
     selected_rows = [row for row in rows if row.scenario == selected]
     first = selected_rows[0]

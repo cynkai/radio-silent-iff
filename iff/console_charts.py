@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from math import cos, radians
 
 import plotly.graph_objects as go
 
@@ -9,9 +10,10 @@ from .events import Event
 
 def radar_figure(events: Sequence[Event]) -> go.Figure:
     figure = go.Figure()
-    for component, symbol in (("C1", "circle"), ("C2", "diamond")):
+    for component, symbol in (("C1", "circle"), ("C2", "diamond"), ("CQ", "circle")):
         for decision, color, label in (("ACCEPT_FRIEND", ACCEPT, "수락"),
-                                       ("REJECT", REJECT, "거부")):
+                                       ("REJECT", REJECT, "거부"),
+                                       ("NO_RESPONSE", MUTED, "무응답")):
             points = [(index, event) for index, event in enumerate(events)
                       if event.component == component and event.decision == decision]
             if not points:
@@ -20,7 +22,7 @@ def radar_figure(events: Sequence[Event]) -> go.Figure:
                 r=[event.range_m for _, event in points],
                 theta=[event.bearing_deg for _, event in points],
                 mode="markers", name=f"{component} · {label}",
-                marker={"color": color, "symbol": symbol, "size": 13,
+                marker={"color": color, "symbol": "x" if decision == "NO_RESPONSE" else symbol, "size": 13,
                         "line": {"color": PANEL, "width": 1}},
                 customdata=[[index + 1, event.scenario, event.reject_stage or "통과",
                              "해당 없음" if event.rtt_ns is None else f"{event.rtt_ns / 1000:.3f} µs"]
@@ -29,6 +31,22 @@ def radar_figure(events: Sequence[Event]) -> go.Figure:
                               "방위 %{theta}° · 거리 %{r} m<br>"
                               "reject_stage: %{customdata[2]}<br>RTT: %{customdata[3]}<extra>%{fullData.name}</extra>",
             ))
+    labels: dict[tuple[float, float], list[str]] = {}
+    for event in events:
+        names = labels.setdefault((event.range_m, event.bearing_deg), [])
+        if event.scenario not in names:
+            names.append(event.scenario)
+    figure.add_trace(go.Scatterpolar(
+        r=[point[0] for point in labels], theta=[point[1] for point in labels],
+        mode="text", text=[" / ".join(names) for names in labels.values()],
+        textposition=["bottom center" if any(
+            radius ** 2 + prior_radius ** 2 - 2 * radius * prior_radius
+            * cos(radians(angle - prior_angle)) < 40 ** 2
+            for prior_radius, prior_angle in list(labels)[:index]) else "top center"
+            for index, (radius, angle) in enumerate(labels)],
+        textfont={"size": 12, "color": TEXT},
+        showlegend=False, hoverinfo="skip",
+    ))
     figure.add_trace(go.Scatterpolar(
         r=[0], theta=[0], mode="markers", name="질의기",
         marker={"symbol": "cross", "size": 12, "color": ACCENT},
@@ -41,8 +59,7 @@ def radar_figure(events: Sequence[Event]) -> go.Figure:
         legend={"orientation": "h", "y": -0.13, "font": {"size": 12}},
         polar={"bgcolor": PANEL,
                "radialaxis": {"range": [0, radial_max * 1.15], "gridcolor": GRID,
-                              "linecolor": GRID, "tickfont": {"color": MUTED},
-                              "title": {"text": "시뮬레이션 기하 · 거리 (m)"}},
+                              "linecolor": GRID, "tickfont": {"color": MUTED}},
                "angularaxis": {"rotation": 90, "direction": "clockwise",
                                "gridcolor": GRID, "linecolor": GRID,
                                "ticksuffix": "°", "tickfont": {"color": MUTED}}},

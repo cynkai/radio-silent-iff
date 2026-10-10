@@ -112,5 +112,5 @@ def test_csv_and_explanation_export_the_same_rows_and_provenance(tmp_path: Path)
 
     assert (tmp_path / "attacker_cost.csv").read_bytes() == cost_csv(rows).encode("utf-8")
     assert (tmp_path / "attacker_cost.md").read_text(encoding="utf-8") == cost_markdown(rows)
-    assert {row.scenario for row in rows} == {"S2", "S3", "S4", "S5", "S6"}
+    assert {row.scenario for row in rows} == {"S2", "S3", "S4", "S5", "S6", "S9"}
     assert all(row.source and row.capability for row in rows)

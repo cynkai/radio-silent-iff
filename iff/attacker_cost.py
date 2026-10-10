@@ -116,6 +116,22 @@ def build_costs(out_dir: Path) -> list[AttackCost]:
             "window를 주기적으로 갱신하는 조건이며 관측·재현 비용과 실제 운용 시간은 미측정.",
             fleet_size=fleet_size,
         ))
+    rows.extend([
+        AttackCost("S9", "가짜 질의기", "키 없는 질의 태그 추측", 2.0 ** -32,
+                   "시도당 균등 32비트 iq_tag 추측 확률 2^-32; S9a의 잘못된 태그는 무응답.",
+                   "공개 nonce·질의기 ID·epoch와 질의 송신 역량", None,
+                   "현재 epoch만 허용; 시도 빈도 미측정",
+                   "iff/crypto.py:iq_key,challenge_tag; iff/protocol.py:Responder.respond",
+                   "질의 +4바이트. 포획 드론에서 iq_key 유출 시 해당 epoch 동안 가짜 질의 가능. "
+                   "공유 iq_key 폐기·교체와 다음 epoch 키 배포 제외로 제한; unit ID 폐기만으로는 부족."),
+        AttackCost("S9", "질의 재방송", "같은 응답기가 같은 epoch에서 처리한 nonce", 0.0,
+                   "S9b: 인증된 질의도 이미 본 nonce면 무응답.",
+                   "진짜 질의를 녹화하고 재송신할 역량", 0.0,
+                   "소비된 nonce는 해당 epoch 동안 재사용 불가",
+                   "iff/scenarios.py:s9_rogue_interrogator; iff/protocol.py:Responder.seen",
+                   "응답기가 보지 못한 질의의 최초 전달은 재방송 캐시로 구분할 수 없음. "
+                   "재시작 시에도 해당 epoch의 nonce 기록을 보존해야 함."),
+    ])
     return rows
 
 
@@ -139,7 +155,7 @@ def cost_markdown(rows: Sequence[AttackCost]) -> str:
     for row in rows:
         lines.append(f"| {row.scenario} {row.attack} | {row.condition} | {probability_text(row)} | "
                      f"{row.capability} | {row.valid_window} |")
-    for scenario in ("S2", "S3", "S4", "S5", "S6"):
+    for scenario in ("S2", "S3", "S4", "S5", "S6", "S9"):
         first = next(row for row in rows if row.scenario == scenario)
         lines.extend(["", f"## {scenario} 유도와 출처", "", first.probability_note,
                       "", first.valid_window, "", first.notes, "", f"출처: {first.source}"])

@@ -8,12 +8,16 @@ import hmac
 from dataclasses import dataclass, field
 from typing import Optional
 from . import crypto, config
+from .events import Event
 
 
 @dataclass
 class Challenge:
     nonce: bytes
     t_send_ns: int
+    interrogator_id: str = "IQ-01"
+    epoch: int = 0
+    iq_tag: bytes = b""
 
 
 @dataclass
@@ -39,10 +43,13 @@ class Interrogator:
     d_max_m: float = config.DEFAULT_D_MAX_M
     revoked: set = field(default_factory=set)
     pending: dict = field(default_factory=dict)   # nonce -> t_send_ns
+    interrogator_id: str = "IQ-01"
 
     def issue(self, nonce: bytes, t_send_ns: int) -> Challenge:
         self.pending[nonce] = t_send_ns
-        return Challenge(nonce, t_send_ns)
+        tag = crypto.challenge_tag(crypto.iq_key(self.master_key, self.current_epoch),
+                                   nonce, self.interrogator_id, self.current_epoch)
+        return Challenge(nonce, t_send_ns, self.interrogator_id, self.current_epoch, tag)
 
     def verify(self, resp: Response) -> VerifyResult:
         # 1. FORMAT
@@ -78,6 +85,43 @@ class Interrogator:
             return VerifyResult("REJECT", "RTT", rtt_ns=rtt)
 
         return VerifyResult("ACCEPT_FRIEND", None, rtt_ns=rtt)
+
+
+@dataclass(slots=True)
+class Responder:
+    """Provisioned drone; retain consumed nonces and local decisions across queries."""
+
+    unit_id: bytes
+    current_epoch: int
+    iq_keys: dict[int, bytes]
+    unit_keys: dict[int, bytes]
+    seen: set[tuple[int, bytes]] = field(default_factory=set)
+    events: list[Event] = field(default_factory=list)
+
+    def respond(self, challenge: Challenge, *, t_recv_ns: int = 0,
+                scenario: str = "", bearing_deg: float = 0, range_m: float = 0) -> Response | None:
+        """Authenticate before transmitting; query epochs have no grace window."""
+        stage = None
+        if challenge.epoch != self.current_epoch:
+            stage = "IQ_EPOCH"
+        elif (challenge.epoch not in self.iq_keys
+              or not hmac.compare_digest(challenge.iq_tag, crypto.challenge_tag(
+                  self.iq_keys[challenge.epoch], challenge.nonce,
+                  challenge.interrogator_id, challenge.epoch))):
+            stage = "IQ_TAG"
+        elif (challenge.epoch, challenge.nonce) in self.seen:
+            stage = "IQ_NONCE"
+        if stage:
+            self.events.append(Event(
+                t_recv_ns, challenge.interrogator_id, bearing_deg, range_m, "CQ",
+                self.unit_id.hex(), challenge.epoch, challenge.nonce.hex(), None,
+                "NO_RESPONSE", stage, scenario, "responder: query rejected",
+            ))
+            return None
+        self.seen.add((challenge.epoch, challenge.nonce))
+        tag = crypto.response_tag(self.unit_keys[challenge.epoch], challenge.nonce,
+                                  self.unit_id, challenge.epoch)
+        return Response(self.unit_id, challenge.epoch, challenge.nonce, tag, t_recv_ns)
 
 
 def make_response(master_key: bytes, epoch: int, unit_id: bytes, nonce: bytes,

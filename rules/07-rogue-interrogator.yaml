@@ -1,0 +1,8 @@
+id: R7_ROGUE_INTERROGATOR
+kind: event
+cases:
+  - match:
+      component: CQ
+      decision: NO_RESPONSE
+    severity: high
+    message: "Responder {unit_id} suppressed an unauthenticated or replayed query."

@@ -34,6 +34,7 @@ def apply_console_style() -> None:
     .console-badge.reject, .console-badge.high, .step.fail {{ color: var(--console-fail); }}
     .console-badge.medium {{ color: #edc56b; }}
     .console-badge.low {{ color: {ACCENT}; }}
+    .console-badge.neutral {{ color: var(--console-muted); }}
     .step {{ display: flex; justify-content: space-between; gap: .5rem;
         padding: .5rem .75rem; margin-bottom: .25rem; border-radius: .25rem;
         background: var(--console-panel); font-size: .875rem; }}

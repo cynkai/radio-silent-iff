@@ -44,6 +44,15 @@ def unit_key(master_key: bytes, epoch: int, unit_id: bytes) -> bytes:
     return hkdf(ek, b"iff-unit", unit_id, 32)
 
 
+def iq_key(master_key: bytes, epoch: int) -> bytes:
+    return hkdf(epoch_key(master_key, epoch), b"iff-iq", b"", 32)
+
+
+def challenge_tag(key: bytes, nonce: bytes, interrogator_id: str, epoch: int) -> bytes:
+    payload = b"CQ" + nonce + interrogator_id.encode("utf-8") + epoch.to_bytes(8, "big")
+    return hmac.new(key, payload, _HASH).digest()[:4]
+
+
 def response_tag(uk: bytes, nonce: bytes, unit_id: bytes, epoch: int,
                  tag_bits: int = config.TAG_BITS) -> bytes:
     """Truncated HMAC over the challenge binding (component 1)."""

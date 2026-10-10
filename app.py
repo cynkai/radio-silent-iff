@@ -41,7 +41,7 @@ budget = config.rtt_budget_ns(d_max)
 sb.caption(f"한계 분석 RTT 예산 ≈ {budget/1000:.1f} µs")
 sb.caption("시드 외 실험 파라미터는 한계 분석용입니다. 콘솔은 시나리오의 기본 설정을 표시합니다.")
 
-results = scenarios.run_all(seed=seed, include_grace=True)
+results = scenarios.run_all(seed=seed, include_grace=True, include_rogue=True)
 all_events = [event for result in results.values() for event in result["events"]]
 if st.session_state.get("replay_seed") != seed:
     st.session_state.replay_seed = seed
@@ -51,14 +51,14 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(
     ["① 운용자 콘솔", "② 이벤트 로그", "③ 포획 기체", "④ 한계 분석", "⑤ 공격자 비용"])
 
 with tab1:
-    scn = st.selectbox("시나리오", list(results), key="scenario")
     mode = st.radio("표시 범위", ["전체 기록", "공격 재생", "선택 시나리오"], horizontal=True, key="view_mode")
+    scn = st.selectbox("시나리오", list(results), key="scenario") if mode == "선택 시나리오" else None
     if mode == "공격 재생":
         next_column, reset_column, progress_column = st.columns([1, 1, 4])
         next_column.button("다음", key="replay_next", disabled=st.session_state.replay_index >= len(all_events),
                            on_click=advance_replay, args=(len(all_events),))
         reset_column.button("초기화", key="replay_reset", on_click=reset_replay)
-        progress_column.caption(f"S1 → S8 · {st.session_state.replay_index} / {len(all_events)} 이벤트")
+        progress_column.caption(f"S1 → S9 · {st.session_state.replay_index} / {len(all_events)} 이벤트")
         visible_events = all_events[:st.session_state.replay_index]
     elif mode == "선택 시나리오":
         visible_events = results[scn]["events"]
@@ -73,13 +73,11 @@ with tab1:
         metrics[3].metric("high 경보", sum(alert["severity"] == "high" for alert in alerts))
     render_radar_detail(visible_events)
     render_feed(visible_events, alerts)
-    with st.expander("선택 시나리오 원본 기록", expanded=False):
-        rng = np.random.default_rng(seed)
-        scenario_functions = {**scenarios.ALL, "S8": scenarios.s8_captured_key_grace}
-        events, expected = scenario_functions[scn](rng)
+    with st.expander("표시 중인 원본 기록", expanded=False):
+        events = visible_events
         for event in events:
             st.json(to_dicts([event])[0])
-        if [(event.decision, event.reject_stage) for event in events] == expected:
+        if all(result["match"] for result in results.values()):
             st.success("기대 결과와 일치: True")
         else:
             st.error("기대 결과 불일치")

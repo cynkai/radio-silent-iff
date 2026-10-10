@@ -26,7 +26,7 @@ def test_all_tabs_render_without_exceptions() -> None:
 
 def test_replay_reveals_exact_event_prefix_and_resets() -> None:
     app = AppTest.from_file(str(ROOT / "app.py")).run(timeout=20)
-    results = scenarios.run_all(seed=42, include_grace=True)
+    results = scenarios.run_all(seed=42, include_grace=True, include_rogue=True)
     events = [event for result in results.values() for event in result["events"]]
 
     app.radio(key="view_mode").set_value("공격 재생").run(timeout=20)
@@ -62,8 +62,8 @@ def test_replay_reveals_exact_event_prefix_and_resets() -> None:
 def test_c2_selection_has_no_rtt_gauge_and_seed_restarts_replay() -> None:
     app = AppTest.from_file(str(ROOT / "app.py")).run(timeout=20)
 
-    app.selectbox(key="scenario").select("S6").run(timeout=20)
     app.radio(key="view_mode").set_value("선택 시나리오").run(timeout=20)
+    app.selectbox(key="scenario").select("S6").run(timeout=20)
 
     assert not app.exception
     assert app.metric[0].value == "2"

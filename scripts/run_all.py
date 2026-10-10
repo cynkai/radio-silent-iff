@@ -22,7 +22,7 @@ def main():
     args = ap.parse_args()
 
     os.makedirs(OUT, exist_ok=True)
-    results = scenarios.run_all(seed=args.seed, include_grace=True)
+    results = scenarios.run_all(seed=args.seed, include_grace=True, include_rogue=True)
 
     all_events = []
     rows = []
