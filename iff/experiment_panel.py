@@ -93,7 +93,7 @@ def render_traffic() -> None:
     st.write(f"엔진 이벤트 {len(traffic.events)}건 · 수락 "
              f"{sum(event.decision == 'ACCEPT_FRIEND' for event in traffic.events)}건 · 경보 {len(alerts)}건")
     figure = radar_figure(traffic.events)
-    figure.data = tuple(trace for trace in figure.data if trace.mode != "text")
+    figure.data = tuple(trace for trace in figure.data if trace.legendgroup != "radar_labels")
     st.plotly_chart(figure, width="stretch", key="traffic_radar", theme=None)
     render_traffic_outcomes(traffic, alerts)
     st.markdown("**룰별 경보 성능**")

@@ -31,7 +31,8 @@ def reset_replay() -> None:
 
 def render_pipeline(event: Event) -> None:
     if event.component == "CQ":
-        st.info("무응답 · 질의 차단" if event.decision == "NO_RESPONSE" else "질의 인증 통과")
+        badge, label = ("neutral", "무응답 · 질의 차단") if event.decision == "NO_RESPONSE" else ("accept", "질의 인증 통과")
+        st.markdown(f'<span class="console-badge {badge}">{label}</span>', unsafe_allow_html=True)
         st.caption(f"응답기 로컬 기록 · {event.reject_stage or '유효한 질의'}")
         return
     blocked = False
@@ -66,11 +67,14 @@ def render_radar_detail(events: Sequence[Event]) -> None:
         if not events:
             st.info("다음을 눌러 첫 이벤트를 재생하세요.")
             return
-        index = st.selectbox("이벤트 선택", range(len(events)), index=len(events) - 1,
+        default_index = next((i for i, event in enumerate(events)
+                              if event.scenario == "S4" and event.reject_stage == "REVOKED"), len(events) - 1)
+        index = st.selectbox("이벤트 선택", range(len(events)), index=default_index,
                              format_func=lambda i: f"#{i + 1} · {events[i].scenario} · "
                              f"{events[i].reject_stage or events[i].decision}", key="event_selection")
         event = events[index]
-        st.caption(f"{event.component} · unit {event.unit_id} · epoch {event.epoch}")
+        st.markdown(f'<div class="mono alert-original">{escape(event.component)} · unit '
+                    f'{escape(event.unit_id)} · epoch {event.epoch}</div>', unsafe_allow_html=True)
         render_pipeline(event)
 
 
@@ -82,13 +86,12 @@ def render_alerts(alerts: Sequence[Alert]) -> None:
         grouped.setdefault(alert["rule"], []).append(alert)
     for rule, group in grouped.items():
         alert = group[0]
+        originals = "".join(f'<div class="alert-original">{escape(item["message"])}</div>' for item in group)
         st.markdown(
             f'<div class="console-row"><span class="console-badge {escape(alert["severity"])}">'
             f'{escape(alert["severity"])}</span> <strong>{escape(rule.split("_")[0])} ×{len(group)}</strong><br>'
-            f'{escape(ALERT_LABELS.get(rule, rule))}</div>', unsafe_allow_html=True)
-        with st.expander(f'{rule.split("_")[0]} 원문 · {len(group)}건'):
-            for item in group:
-                st.text(item["message"])
+            f'<div class="alert-title">{escape(ALERT_LABELS.get(rule, rule))}</div>'
+            f'{originals}</div>', unsafe_allow_html=True)
 
 
 def render_feed(events: Sequence[Event], alerts: Sequence[Alert]) -> None:
@@ -106,9 +109,9 @@ def render_feed(events: Sequence[Event], alerts: Sequence[Alert]) -> None:
             st.markdown(
                 f'<div class="console-row"><span class="console-badge {badge}">'
                 f'{label}</span> '
-                f'<strong>#{index + 1} · {escape(event.scenario)} · {escape(event.component)}</strong> '
-                f'&nbsp; {escape(event.reject_stage or event.decision)}<br>'
-                f'{event.bearing_deg:g}° / {event.range_m:g} m · ts {event.ts_ns} ns<br>'
+                f'<strong class="mono">#{index + 1} · {escape(event.scenario)} · {escape(event.component)}</strong> '
+                f'&nbsp; <span class="mono">{escape(event.reject_stage or event.decision)}</span><br>'
+                f'<span class="mono">{event.bearing_deg:g}° / {event.range_m:g} m · ts {event.ts_ns} ns</span><br>'
                 f'{escape(event.note)}</div>', unsafe_allow_html=True)
     with warnings:
         st.subheader("탐지 경보")

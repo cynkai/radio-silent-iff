@@ -6,12 +6,22 @@ No additional dependencies, contact synthesis, or automatic animation are permit
 
 ## Console tokens
 
-- Background #0b1118; panel #111c28; raised surface #182637; grid #2b3b4e.
+- Background #0b1118; panel #111c28; grid #2b3b4e. Two dark surface levels.
 - Text #e5edf5; secondary text #9aafc4; accept #51d69a; reject/high #ff7a86.
-- Medium #edc56b; low/accent #81b7ee; unreached #78899c.
-- System sans-serif with Korean fallbacks; tabular numbers; body 16px, labels 14px,
-  title 32px; spacing 4/8/12/16/24/32px; corners 8px.
-- Chart heights: radar 480px, gauge 160px, epoch timeline 340px.
+- Accent #5ad4e6; medium/low use accent; no response/unreached #9aafc4.
+- Google Fonts IBM Plex Sans KR for body, IBM Plex Mono for numbers, IDs and hex;
+  tabular numbers; body 16px, labels 14px, title 28px; spacing 4/8/12/16/24/32px;
+  corners 8px. Chart labels use IBM Plex Mono with the Korean body fallback.
+- Streamlit's theme base font is Mono for canvas dataframe cells; body, labels,
+  headings and captions explicitly use Sans KR. Code uses Mono. Mobile captions
+  are 12px and stacked panel gaps are 16px.
+- Chart heights: radar 400px, gauge 160px, epoch timeline 340px.
+- Compact gray disclosure strip (12px), unchanged disclosure copy; 16px desktop
+  top inset. Value proposition and three native navigation buttons precede KPIs.
+- KPI cards have one caption under the number; only high alerts have a red border.
+- Radar labels can move along leader lines; contact coordinates never move.
+- Alert titles are prominent Korean labels; original English messages appear below
+  in muted 13px monospace, with every original message retained.
 
 ## Console layout and states
 
@@ -19,8 +29,11 @@ The supporting-pane pattern keeps detail next to the radar, with no nested scrol
 https://github.com/changeroa/StyleGallery/blob/main/patterns/split-sidebar/supporting-pane.md
 The Streamlit document owns page scrolling. Desktop uses a 2:1 radar/detail split,
 with a 3:2 event/alert split below; Streamlit columns stack at compact widths.
-At phone widths KPI values use a 2x2 grid and the document has 64px top clearance.
-The default workspace keeps five tabs. A native workspace radio opens the experiment
+At phone widths KPI values use a 2x2 grid and the document has 16px top clearance.
+Navigation wraps, radar and detail stack, and long identifiers wrap without page overflow.
+The default workspace keeps five tabs. Three guide buttons directly select replay,
+experiments or limits; initial detail selects the existing S4 REVOKED event.
+A visible native workspace radio opens the experiment
 workspace with red-team sandbox and engagement traffic tabs. Analysis controls live in the collapsible sidebar.
 KPI values and radar contacts use the visible event prefix during replay; scenario
 inspection uses the selected scenario. No fake offsets resolve overlapping contacts.
@@ -47,7 +60,7 @@ explicit symbols and labels. Controls retain Streamlit keyboard/focus behavior.
 HTML interpolations are escaped. Charts have adjacent textual event information.
 Korean uses word-break: keep-all; long technical identifiers may wrap.
 No motion is needed. Empty feeds and missing RTT have explicit explanations.
-Dark is the default console theme; user-selected light mode keeps readable controls.
+Dark is the requested console theme. Streamlit chrome is hidden; the sidebar starts collapsed.
 Native Plotly/Streamlit rendering and their built-in accessibility remain framework constraints.
 
 ## 1. Identity
@@ -58,7 +71,7 @@ The cost panel presents derived values, their conditions, and their provenance t
 The console uses the tokens above; analysis and cost controls use Streamlit theme colors.
 
 ## 3. Typography
-Use Streamlit subheader, body, caption, table, and code primitives and their default font scale.
+Use Streamlit subheader, body, caption, table, and code primitives with the console font tokens.
 Scientific probabilities retain significant digits rather than rounding to zero percent.
 
 ## 4. Layout
@@ -82,7 +95,7 @@ Preserve the framework's semantic controls. Verify the cost panel at phone and d
 Existing unrelated dashboard styling is outside this feature's scope.
 
 ## Situation briefing
-The console starts with a native bordered Streamlit container for interpretation only.
+The briefing follows the radar and event/alert feed in a native bordered container for interpretation only.
 Use existing badge tokens, wrapping body text, and tertiary buttons as evidence links.
 Unverified findings use the secondary text token plus strikethrough and an explicit label.
 Evidence selection updates the existing detail selector without advancing replay.

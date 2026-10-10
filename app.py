@@ -19,7 +19,7 @@ from iff.maneuver import (expected_bits, generate_yaw_series, observe,
 from iff.protocol import Interrogator, make_response
 from iff.attacker_cost import captured_window_text
 from iff.attacker_cost_panel import render_attacker_cost_panel
-from iff.console_style import apply_console_style
+from iff.console_style import ACCENT, GRID, MONO_FONT, PANEL, TEXT, apply_console_style
 from iff.console_charts import timeline_figure
 from iff.briefing_panel import render_briefing
 from iff.operator_console import render_radar_detail, render_feed, render_alerts, advance_replay, reset_replay
@@ -42,12 +42,31 @@ def _ensure_sweeps():
 
 _ensure_sweeps()
 apply_console_style()
-st.warning("시뮬레이션 — 실기체·실채널 측정값이 아닙니다. "
-           "표준 공개 암호 기법(HKDF/HMAC)을 사용하며 하드웨어는 없습니다.")
-st.title("IFF / 운용자 콘솔")
-st.caption("광학 인증 C1 · 기동 서명 C2  /  Radio-silent identification")
+st.markdown('<div class="masthead"><div class="disclosure">시뮬레이션 — 실기체·실채널 측정값이 아닙니다. '
+            '표준 공개 암호 기법(HKDF/HMAC)을 사용하며 하드웨어는 없습니다.</div>'
+            '<h1>IFF / 운용자 콘솔</h1>'
+            '<p class="value-proposition">무선 송신 없이 아군을 식별하고, 공격이 차단되는 지점과 한계를 확인하세요.</p></div>',
+            unsafe_allow_html=True)
+
+
+def navigate_console(workspace: str, tab: str, mode: str) -> None:
+    st.session_state.workspace = workspace
+    st.session_state.console_tab = tab
+    st.session_state.view_mode = mode
+
+
+with st.container(key="quick_guide"):
+    guide = st.columns([.7, 2, 2, 2], vertical_alignment="center")
+    guide[0].caption("이렇게 보세요")
+    guide[1].button("① 공격 재생으로 S1~S9 보기", width="stretch", on_click=navigate_console,
+                    args=("기존 시나리오", "① 운용자 콘솔", "공격 재생"))
+    guide[2].button("② 공격 실험에서 직접 공격", width="stretch", on_click=navigate_console,
+                    args=("공격 실험", "① 운용자 콘솔", "전체 기록"))
+    guide[3].button("③ 한계 분석 확인", width="stretch", on_click=navigate_console,
+                    args=("기존 시나리오", "④ 한계 분석", "전체 기록"))
 workspace = st.radio("작업 공간", ["기존 시나리오", "공격 실험"], horizontal=True,
-                     index=1 if st.query_params.get("workspace") == "experiments" else 0)
+                     index=1 if st.query_params.get("workspace") == "experiments" else 0,
+                     key="workspace", label_visibility="collapsed")
 if workspace == "공격 실험":
     with st.container(key="experiments"):
         render_experiments()
@@ -71,11 +90,12 @@ if st.session_state.get("replay_seed") != seed:
     st.session_state.replay_index = 0
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs(
-    ["① 운용자 콘솔", "② 이벤트 로그", "③ 포획 기체", "④ 한계 분석", "⑤ 공격자 비용"])
+    ["① 운용자 콘솔", "② 이벤트 로그", "③ 포획 기체", "④ 한계 분석", "⑤ 공격자 비용"],
+    key="console_tab", on_change="rerun")
 
 with tab1:
-    briefing_card = st.container()
-    mode = st.radio("표시 범위", ["전체 기록", "공격 재생", "선택 시나리오"], horizontal=True, key="view_mode")
+    mode = st.radio("표시 범위", ["전체 기록", "공격 재생", "선택 시나리오"], horizontal=True,
+                    key="view_mode", label_visibility="collapsed")
     scn = st.selectbox("시나리오", list(results), key="scenario") if mode == "선택 시나리오" else None
     if mode == "공격 재생":
         next_column, reset_column, progress_column = st.columns([1, 1, 4])
@@ -89,16 +109,18 @@ with tab1:
     else:
         visible_events = all_events
     alerts = detect.run_rules(to_dicts(visible_events), revoked_hex=[scenarios.CAP.hex()])
-    with briefing_card:
-        render_briefing(visible_events, alerts)
     with kpi_strip:
         metrics = st.columns(4)
         metrics[0].metric("질의 수", len(visible_events), help="표시된 이벤트 수입니다. C2 관측 판정도 포함합니다.")
         metrics[1].metric("수락", sum(event.decision == "ACCEPT_FRIEND" for event in visible_events))
         metrics[2].metric("거부", sum(event.decision == "REJECT" for event in visible_events))
         metrics[3].metric("high 경보", sum(alert["severity"] == "high" for alert in alerts))
+        for column, explanation in zip(metrics, ("C1 질의 · C2 관측 포함", "아군 인증을 통과한 기록",
+                                                 "검증 단계에서 차단된 기록", "우선 확인할 고위험 탐지")):
+            column.caption(explanation)
     render_radar_detail(visible_events)
     render_feed(visible_events, alerts)
+    render_briefing(visible_events, alerts)
     with st.expander("표시 중인 원본 기록", expanded=False):
         events = visible_events
         for event in events:
@@ -141,8 +163,11 @@ with tab4:
             if iq.verify(r).reject_stage == "RTT":
                 rej += 1
         rates.append(rej / 200)
-    fig = go.Figure(go.Scatter(x=[o/1000 for o in ovhs], y=rates, mode="lines+markers"))
+    fig = go.Figure(go.Scatter(x=[o/1000 for o in ovhs], y=rates, mode="lines+markers",
+                              line={"color": ACCENT}))
     fig.update_layout(height=260, xaxis_title="중계 추가 지연 (µs)", yaxis_title="RTT 거부율",
+                      paper_bgcolor=PANEL, plot_bgcolor=PANEL, font={"family": MONO_FONT, "color": TEXT},
+                      xaxis={"gridcolor": GRID}, yaxis={"gridcolor": GRID},
                       margin=dict(l=10, r=10, t=10, b=10))
     st.plotly_chart(fig, use_container_width=True, key="relay")
     nominal_boundary = (budget - 2 * channel.propagation_ns(400.0) - config.ASSUMPTION_PROC_NS) / 1000
@@ -165,9 +190,13 @@ with tab4:
                 r += 1
         gacc.append(g/300); racc.append(r/300)
     fig2 = go.Figure()
-    fig2.add_trace(go.Scatter(x=sigmas, y=gacc, mode="lines+markers", name="정상 아군"))
-    fig2.add_trace(go.Scatter(x=sigmas, y=racc, mode="lines+markers", name="이전 window 재현"))
+    fig2.add_trace(go.Scatter(x=sigmas, y=gacc, mode="lines+markers", name="정상 아군",
+                             line={"color": ACCENT}))
+    fig2.add_trace(go.Scatter(x=sigmas, y=racc, mode="lines+markers", name="이전 window 재현",
+                             line={"color": ACCENT, "dash": "dot"}, marker={"symbol": "diamond"}))
     fig2.update_layout(height=260, xaxis_title="관측 노이즈 σ (deg)", yaxis_title="수락률",
+                       paper_bgcolor=PANEL, plot_bgcolor=PANEL, font={"family": MONO_FONT, "color": TEXT},
+                       xaxis={"gridcolor": GRID}, yaxis={"gridcolor": GRID},
                        margin=dict(l=10, r=10, t=10, b=10))
     st.plotly_chart(fig2, use_container_width=True, key="maneuver")
 
@@ -175,8 +204,10 @@ with tab4:
     p = random_match_prob(k=K)
     ms = [1, 5, 10, 25, 50, 100, 200]
     fa = [1 - (1 - p) ** m for m in ms]
-    fig3 = go.Figure(go.Bar(x=[str(m) for m in ms], y=fa))
+    fig3 = go.Figure(go.Bar(x=[str(m) for m in ms], y=fa, marker={"color": ACCENT}))
     fig3.update_layout(height=240, xaxis_title="아군 목록 크기", yaxis_title="오수락 확률(≥1건)",
+                       paper_bgcolor=PANEL, plot_bgcolor=PANEL, font={"family": MONO_FONT, "color": TEXT},
+                       xaxis={"gridcolor": GRID}, yaxis={"gridcolor": GRID},
                        margin=dict(l=10, r=10, t=10, b=10))
     st.plotly_chart(fig3, use_container_width=True, key="listsize")
     st.caption(f"단위 오수락 확률 p = {p:.4f} (n={config.MANEUVER_BITS}, K={K}). "

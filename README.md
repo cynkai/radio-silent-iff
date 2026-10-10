@@ -4,6 +4,8 @@
 
 **D4D x EDTH · Korean Defense Tech Hackathon · Track 1 / Problem 04**
 
+![IFF 대시보드 첫 화면 · 공격 재생, 직접 공격 실험, 한계 분석](docs/img/dashboard-first.png)
+
 > **시뮬레이션입니다.** 실기체·실채널·실측값이 없습니다. 표준 공개 암호 기법
 > (HKDF-SHA256, HMAC-SHA256, nonce 챌린지-응답)을 사용하며 Python으로 동작합니다.
 > 아래 결과는 시뮬레이션의 판정이며 실제 운용 성능을 뜻하지 않습니다.
@@ -45,9 +47,11 @@ R6은 오래된 epoch 응답의 반복을 탐지하는 추가 예시입니다.
 
 ## 스크린샷
 
-![운용자 콘솔 레이더](docs/img/radar.png)
+![이벤트 피드와 탐지 경보](docs/img/dashboard-scroll.png)
 
-![포획 기체 epoch 타임라인](docs/img/timeline.png)
+![공격 실험](docs/img/dashboard-experiments.png)
+
+![포획 기체 epoch 타임라인](docs/img/dashboard-timeline.png)
 
 ## Quickstart
 

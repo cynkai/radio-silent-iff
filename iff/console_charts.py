@@ -1,10 +1,10 @@
 from collections.abc import Sequence
-from math import cos, radians
+from math import atan2, cos, degrees, hypot, radians, sin
 
 import plotly.graph_objects as go
 
 from . import config
-from .console_style import ACCEPT, ACCENT, GRID, MUTED, PANEL, REJECT, TEXT
+from .console_style import ACCEPT, ACCENT, GRID, MONO_FONT, MUTED, PANEL, REJECT, TEXT
 from .events import Event
 
 
@@ -22,7 +22,7 @@ def radar_figure(events: Sequence[Event]) -> go.Figure:
                 r=[event.range_m for _, event in points],
                 theta=[event.bearing_deg for _, event in points],
                 mode="markers", name=f"{component} · {label}",
-                marker={"color": color, "symbol": "x" if decision == "NO_RESPONSE" else symbol, "size": 13,
+                marker={"color": color, "symbol": "x" if decision == "NO_RESPONSE" else symbol, "size": 17,
                         "line": {"color": PANEL, "width": 1}},
                 customdata=[[index + 1, event.scenario, event.reject_stage or "통과",
                              "해당 없음" if event.rtt_ns is None else f"{event.rtt_ns / 1000:.3f} µs"]
@@ -36,30 +36,53 @@ def radar_figure(events: Sequence[Event]) -> go.Figure:
         names = labels.setdefault((event.range_m, event.bearing_deg), [])
         if event.scenario not in names:
             names.append(event.scenario)
+    radial_max = max((event.range_m for event in events), default=config.DEFAULT_D_MAX_M)
+    label_points: list[tuple[float, float]] = []
+    placed: list[tuple[float, float, float]] = []
+    contacts = [(radius * sin(radians(angle)) / radial_max, radius * cos(radians(angle)) / radial_max)
+                for radius, angle in labels]
+    offsets = sorted(((dx * .16, dy * .16) for dx in range(-8, 9) for dy in range(-8, 9)),
+                     key=lambda point: (hypot(*point), -point[1]))
+    for ((radius, angle), names), (x, y) in zip(labels.items(), contacts):
+        half_width = len(" / ".join(names)) * .028 + .02
+        label_x, label_y = x, y
+        if len(labels) <= 40:
+            label_x, label_y = next(((x + dx, y + dy) for dx, dy in offsets
+                if hypot(x + dx, y + dy) < .98
+                and all(abs(x + dx - px) > half_width + width + .04 or abs(y + dy - py) > .16
+                        for px, py, width in placed)
+                and all(abs(x + dx - px) > half_width + .07 or abs(y + dy - py) > .16
+                        for px, py in contacts)), (x, y))
+        placed.append((label_x, label_y, half_width))
+        label_radius = hypot(label_x, label_y) * radial_max
+        label_angle = degrees(atan2(label_x, label_y))
+        label_points.append((label_radius, label_angle))
+        if len(labels) <= 40:
+            figure.add_trace(go.Scatterpolar(
+                r=[radius, label_radius], theta=[angle, label_angle], mode="lines",
+                line={"color": MUTED, "width": 1}, legendgroup="radar_labels",
+                showlegend=False, hoverinfo="skip",
+            ))
     figure.add_trace(go.Scatterpolar(
-        r=[point[0] for point in labels], theta=[point[1] for point in labels],
+        r=[point[0] for point in label_points], theta=[point[1] for point in label_points],
         mode="text", text=[" / ".join(names) for names in labels.values()],
-        textposition=["bottom center" if any(
-            radius ** 2 + prior_radius ** 2 - 2 * radius * prior_radius
-            * cos(radians(angle - prior_angle)) < 40 ** 2
-            for prior_radius, prior_angle in list(labels)[:index]) else "top center"
-            for index, (radius, angle) in enumerate(labels)],
+        textposition="middle center",
         textfont={"size": 12, "color": TEXT},
-        showlegend=False, hoverinfo="skip",
+        legendgroup="radar_labels", showlegend=False, hoverinfo="skip",
     ))
     figure.add_trace(go.Scatterpolar(
         r=[0], theta=[0], mode="markers", name="질의기",
         marker={"symbol": "cross", "size": 12, "color": ACCENT},
         hovertemplate="질의기 · 원점<extra></extra>",
     ))
-    radial_max = max((event.range_m for event in events), default=config.DEFAULT_D_MAX_M)
     figure.update_layout(
-        height=480, paper_bgcolor=PANEL, font={"color": TEXT},
-        margin={"l": 48, "r": 48, "t": 32, "b": 48},
-        legend={"orientation": "h", "y": -0.13, "font": {"size": 12}},
+        height=400, paper_bgcolor=PANEL, font={"color": TEXT, "family": MONO_FONT},
+        margin={"l": 40, "r": 40, "t": 32, "b": 48},
+        legend={"orientation": "h", "traceorder": "normal", "y": -0.16, "font": {"size": 11}},
         polar={"bgcolor": PANEL,
                "radialaxis": {"range": [0, radial_max * 1.15], "gridcolor": GRID,
-                              "linecolor": GRID, "tickfont": {"color": MUTED}},
+                              "angle": 225, "nticks": 4,
+                              "linecolor": GRID, "tickfont": {"color": MUTED, "size": 10}},
                "angularaxis": {"rotation": 90, "direction": "clockwise",
                                "gridcolor": GRID, "linecolor": GRID,
                                "ticksuffix": "°", "tickfont": {"color": MUTED}}},
@@ -77,7 +100,7 @@ def rtt_figure(event: Event) -> go.Figure:
                "bgcolor": GRID, "threshold": {"value": budget_us,
                                                "line": {"color": TEXT, "width": 2}}},
     ))
-    figure.update_layout(height=160, paper_bgcolor=PANEL, font={"color": TEXT},
+    figure.update_layout(height=160, paper_bgcolor=PANEL, font={"color": TEXT, "family": MONO_FONT},
                          title={"text": f"RTT / 예산 {budget_us:.3f} µs", "x": .06,
                                 "font": {"size": 14}},
                          margin={"l": 24, "r": 64, "t": 48, "b": 32})
@@ -108,7 +131,7 @@ def timeline_figure(events: Sequence[Event]) -> go.Figure:
     figure.add_annotation(x=expiry, y=1.12, yref="paper", text="EPOCH · 유예 종료 경계",
                           showarrow=False, xanchor="right", font={"color": MUTED, "size": 12})
     figure.update_layout(
-        height=340, paper_bgcolor=PANEL, plot_bgcolor=PANEL, font={"color": TEXT},
+        height=340, paper_bgcolor=PANEL, plot_bgcolor=PANEL, font={"color": TEXT, "family": MONO_FONT},
         margin={"l": 24, "r": 24, "t": 64, "b": 48}, showlegend=False,
         xaxis={"range": [epoch - .15, max(epoch + 3, expiry + 1)],
                "tickvals": [epoch, epoch + 1, epoch + 2],
