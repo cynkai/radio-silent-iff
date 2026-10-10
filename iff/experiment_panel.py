@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from .briefing_panel import render_briefing
+from .experiment_presets import render_presets
 from .console_charts import radar_figure, rtt_figure
 from .console_style import ACCENT, GRID, PANEL, TEXT
 from .operator_console import render_alerts
@@ -18,12 +19,16 @@ from .traffic_report import render_traffic_outcomes
 def render_sandbox() -> None:
     st.subheader("레드팀 샌드박스")
     st.caption("입력을 구성하고 공격 실행을 누르세요. 기존 프로토콜 엔진의 실제 결과를 표시합니다.")
+    render_presets()
+    attack = st.selectbox("공격 유형", list(Attack), format_func=str, key="sandbox_attack", index=1)
     with st.form("sandbox_form"):
-        attack = st.selectbox("공격 유형", list(Attack), format_func=str, key="sandbox_attack", index=1)
         left, right = st.columns(2)
-        relay = left.slider("중계 추가 지연 (µs)", 0, 200, 25, key="sandbox_relay")
-        elapsed = right.selectbox("포획 후 경과 epoch", [0, 1, 2], index=1, key="sandbox_epoch")
-        revoked = left.checkbox("폐기 여부", key="sandbox_revoked")
+        relay, elapsed, revoked = 25, 1, False
+        if attack == Attack.RELAY:
+            relay = left.slider("중계 추가 지연 (µs)", 0, 200, 25, key="sandbox_relay")
+        if attack == Attack.CAPTURED:
+            elapsed = left.selectbox("포획 후 경과 epoch", [0, 1, 2], index=1, key="sandbox_epoch")
+            revoked = right.checkbox("폐기 여부", key="sandbox_revoked")
         ber = right.number_input("비트오류율 (BER)", 0.0, 1.0, 0.0, 0.001, format="%.3f", key="sandbox_ber")
         seed = left.number_input("시드", min_value=0, value=42, step=1, key="sandbox_seed")
         st.caption("지연은 중계, 경과 epoch는 포획 기체에 적용합니다. BER은 응답 태그에 적용합니다.")
@@ -31,9 +36,6 @@ def render_sandbox() -> None:
             inputs = SandboxInput(attack=attack, relay_us=relay, elapsed_epochs=elapsed,
                                   revoked=revoked, ber=ber, seed=seed)
             st.session_state.sandbox_run = (inputs, run_experiment(inputs))
-    if "sandbox_run" not in st.session_state:
-        st.info("아직 실행한 공격이 없습니다.")
-        return
     inputs, result = st.session_state.sandbox_run
     event = result.event
     alerts = detect_traffic([event])

@@ -1,5 +1,11 @@
 # IFF operator console design
 
+## Guided experiment extension
+Reuse the existing dark surfaces, cyan actions and decision colors. Presets use a
+two-column button cluster that stacks on mobile. Results always come from the
+engine at runtime. Conditional input groups retain visible labels. Radial tick
+labels stay horizontal on the left, without a zero label at the origin.
+
 The existing Streamlit dashboard supplies tabs, controls, data tables, and Plotly charts.
 The redesign prioritizes an event-backed radar and inspection pane over repeated pipeline charts.
 No additional dependencies, contact synthesis, or automatic animation are permitted.

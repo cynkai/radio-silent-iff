@@ -75,13 +75,19 @@ def radar_figure(events: Sequence[Event]) -> go.Figure:
         marker={"symbol": "cross", "size": 12, "color": ACCENT},
         hovertemplate="질의기 · 원점<extra></extra>",
     ))
+    figure.add_trace(go.Scatterpolar(
+        r=[radial_max * fraction for fraction in (.25, .5, .75, 1)], theta=[240] * 4,
+        mode="text", text=[f"{radial_max * fraction:g}" for fraction in (.25, .5, .75, 1)],
+        textposition="middle left", textfont={"size": 10, "color": MUTED},
+        showlegend=False, hoverinfo="skip",
+    ))
     figure.update_layout(
         height=400, paper_bgcolor=PANEL, font={"color": TEXT, "family": MONO_FONT},
         margin={"l": 40, "r": 40, "t": 32, "b": 48},
         legend={"orientation": "h", "traceorder": "normal", "y": -0.16, "font": {"size": 11}},
         polar={"bgcolor": PANEL,
                "radialaxis": {"range": [0, radial_max * 1.15], "gridcolor": GRID,
-                              "angle": 225, "nticks": 4,
+                              "showticklabels": False,
                               "linecolor": GRID, "tickfont": {"color": MUTED, "size": 10}},
                "angularaxis": {"rotation": 90, "direction": "clockwise",
                                "gridcolor": GRID, "linecolor": GRID,
