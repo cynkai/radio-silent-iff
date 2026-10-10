@@ -5,6 +5,7 @@ import streamlit as st
 from .attacker_cost import cost_csv, probability_text, write_attacker_cost
 from .sandbox import Attack, SandboxInput, run_experiment
 from .traffic import TrafficInput, detect_traffic, generate_traffic, measure
+from .traffic_report import render_traffic_outcomes
 
 
 def render_attacker_cost_panel(out_dir: Path) -> None:
@@ -28,10 +29,12 @@ def render_attacker_cost_panel(out_dir: Path) -> None:
         st.table(records)
         for ber in (0, 0.1):
             traffic = generate_traffic(TrafficInput(ber=ber))
-            overall = measure(traffic, detect_traffic(traffic.events))[-1]
+            alerts = detect_traffic(traffic.events)
+            overall = measure(traffic, alerts)[-1]
             st.write(f"교전 N=200 / M=100 · BER={ber:g}: "
                      f"TP={overall.tp}, FP={overall.fp}, FN={overall.fn}, "
-                     f"탐지율={overall.detection_rate:.0%}, 오탐률={overall.false_positive_rate:.1%}")
+                     f"경보 오탐률={overall.false_positive_rate:.1%}")
+            render_traffic_outcomes(traffic, alerts)
         st.caption("상단 작업 공간 → 공격 실험에서 입력을 바꾸어 재현할 수 있습니다. "
                    "비용·역량 가정은 기존 표를 따르며 금전 비용은 미측정입니다.")
     st.download_button("공격자 비용 CSV 다운로드", cost_csv(rows), "attacker_cost.csv", "text/csv")

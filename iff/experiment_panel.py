@@ -12,6 +12,7 @@ from .rule_engine import Alert
 from .sandbox import Attack, PIPELINE, SandboxInput, pipeline_states, run_experiment
 from .traffic import (Measurement, Performance, Traffic, TrafficInput, detect_traffic,
                       generate_traffic, measure, sweep)
+from .traffic_report import render_traffic_outcomes
 
 
 def render_sandbox() -> None:
@@ -94,9 +95,11 @@ def render_traffic() -> None:
     figure = radar_figure(traffic.events)
     figure.data = tuple(trace for trace in figure.data if trace.mode != "text")
     st.plotly_chart(figure, width="stretch", key="traffic_radar", theme=None)
-    st.markdown("**룰별 탐지 성능**")
+    render_traffic_outcomes(traffic, alerts)
+    st.markdown("**룰별 경보 성능**")
     st.caption("경보 근거의 고유 이벤트 단위. TP·FN 분모는 모든 공격 M건, FP·TN 분모는 정상 N건입니다. "
-               "ANY_RULE은 중복 제거한 합집합입니다. 해당 표본이 없으면 비율은 비어 있습니다.")
+               "ANY_RULE은 중복 제거한 합집합입니다. detection_rate는 경보율이며 차단율이 아닙니다. "
+               "해당 표본이 없으면 비율은 비어 있습니다.")
     st.dataframe([asdict(row) for row in metrics], hide_index=True, width="stretch")
     st.markdown("**BER 대비 오탐 곡선**")
     chart = go.Figure()
