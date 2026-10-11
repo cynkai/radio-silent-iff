@@ -3,6 +3,7 @@ from pathlib import Path
 from streamlit.testing.v1 import AppTest
 
 from iff.guide_tour import SCENES
+from visual_selectors import motion_data
 
 
 def test_tour_all_scenes_and_exit():
@@ -11,7 +12,7 @@ def test_tour_all_scenes_and_exit():
     for index in range(len(SCENES)):
         assert not app.exception
         assert SCENES[index][0] in [h.value for h in app.subheader]
-        assert app.get("plotly_chart")
+        assert motion_data(app, "radar")
         if index == 2:
             assert app.selectbox(key="tour_event_2").options == ["#1 · S1 · ACCEPT_FRIEND"]
         if index < len(SCENES) - 1:

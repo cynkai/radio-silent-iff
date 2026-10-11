@@ -5,6 +5,7 @@ from streamlit.testing.v1 import AppTest
 
 from iff import detect, scenarios
 from iff.events import to_dicts
+from visual_selectors import motion_data
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,7 +19,7 @@ def test_all_tabs_render_without_exceptions() -> None:
     assert not app.exception
     assert len(app.tabs) == 5
     assert all(len(tab.children) for tab in app.tabs)
-    assert len(app.tabs[0].get("plotly_chart")) >= 1
+    assert len(motion_data(app.tabs[0], "radar")) >= 1
     assert len(app.tabs[2].get("plotly_chart")) == 1
     assert len(app.tabs[3].get("plotly_chart")) == 3
     assert len(app.tabs[4].dataframe) == 2
@@ -42,10 +43,9 @@ def test_replay_reveals_exact_event_prefix_and_resets() -> None:
             str(sum(event.decision == "REJECT" for event in shown)),
             str(sum(alert["severity"] == "high" for alert in alerts)),
         ]
-        spec = json.loads(app.tabs[0].get("plotly_chart")[0].proto.spec)
-        contacts = sorted((point[0], radius, angle)
-                          for trace in spec["data"] if "customdata" in trace
-                          for point, radius, angle in zip(trace["customdata"], trace["r"], trace["theta"]))
+        spec = motion_data(app.tabs[0], "radar")[0]
+        contacts = sorted((point["id"], point["range_m"], point["bearing_deg"])
+                          for point in spec["events"])
         assert contacts == [(index + 1, event.range_m, event.bearing_deg)
                             for index, event in enumerate(shown)]
         assert len(app.tabs[1].dataframe[0].value) == count
@@ -67,7 +67,8 @@ def test_c2_selection_has_no_rtt_gauge_and_seed_restarts_replay() -> None:
 
     assert not app.exception
     assert app.metric[0].value == "2"
-    assert len(app.tabs[0].get("plotly_chart")) == 1
+    assert len(motion_data(app.tabs[0], "radar")) == 1
+    assert not app.tabs[0].get("plotly_chart")
 
     app.radio(key="view_mode").set_value("공격 재생").run(timeout=20)
     app.button(key="replay_next").click().run(timeout=20)

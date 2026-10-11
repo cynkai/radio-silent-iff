@@ -41,7 +41,26 @@ function pipeline(e){
  const ratio=e.rtt_ns===null?0:e.rtt_ns/Math.max(e.rtt_ns,e.budget_ns);root.querySelector('.budget-fill').style.transform=`scaleX(${ratio*Math.max(0,Math.min(step-5,1))})`;root.querySelector('.budget-fill').style.background=e.reject_stage==='RTT'?'var(--fail)':'var(--pass)';root.querySelector('.budget-marker').style.left=`${e.budget_ns/Math.max(e.rtt_ns||0,e.budget_ns)*100}%`;
  };
 }
+function radar(data){
+ const maximum=data.radialaxis.max||1,cx=300,cy=224,radius=174;
+ const xy=(r,a)=>[cx+Math.sin(a*Math.PI/180)*r/maximum*radius,cy-Math.cos(a*Math.PI/180)*r/maximum*radius];
+ const eventColor=e=>e.decision==='ACCEPT_FRIEND'?'var(--pass)':e.decision==='REJECT'?'var(--fail)':'var(--muted)';
+ const severityColor=s=>s==='high'?'var(--fail)':s==='medium'?'var(--cyan)':'var(--muted)';
+ const ordered=[...data.events].sort((a,b)=>a.ts_ns-b.ts_ns||a.id-b.id),rank=new Map(ordered.map((e,i)=>[e.id,i]));
+ const contacts=data.events.map(e=>{const [x,y]=xy(e.range_m,e.bearing_deg),shape=e.symbol==='x'?'<path d="M-5-5L5 5M-5 5L5-5" fill="none" stroke="currentColor" stroke-width="3"/>':e.symbol==='diamond'?'<path d="M0-7L7 0L0 7L-7 0Z" fill="currentColor"/>':'<circle r="6" fill="currentColor"/>';
+ return `<g class="contact" tabindex="0" data-id="${e.id}" data-order="${rank.get(e.id)}" transform="translate(${x} ${y})" style="color:${eventColor(e)}" aria-label="${esc(`${e.scenario} · ${e.decision_label} · ${e.reject_stage||'ACCEPT'} · ${e.bearing_deg}° · ${e.range_m}m`)}"><title>${esc(`#${e.id} · ${e.scenario} · ${e.decision_label} · ${e.reject_stage||'ACCEPT'} · ${e.bearing_deg}° / ${e.range_m}m`)}</title>${e.severity?`<circle class="alert-pulse" r="11" style="stroke:${severityColor(e.severity)}"/>`:''}${e.id===data.selected?'<circle class="selection-ring" r="15"/>':''}${shape}</g>`;}).join('');
+ const labels=data.labels.length<=24?data.labels:[];
+ const labelMarkup=[false,true].map(right=>{let previous=18;const lane=labels.map(label=>({...label,point:xy(label.r,label.theta)})).filter(label=>(label.point[0]>=cx)===right).sort((a,b)=>a.point[1]-b.point[1]);return lane.map((label,i)=>{const [x,y]=label.point,lx=right?cx+radius+23:cx-radius-23;let desired=Math.abs(y-cy)<23?cy+25:y;const ly=Math.min(408-(lane.length-i-1)*24,Math.max(previous+24,desired));previous=ly;return `<g class="radar-label"><path d="M${x} ${y}L${right?lx-8:lx+8} ${ly}"/><text x="${lx}" y="${ly+4}" text-anchor="${right?'start':'end'}">${esc(label.text)}</text></g>`;}).join('');}).join('');
+ const rings=[.25,.5,.75,1].map(f=>`<circle cx="${cx}" cy="${cy}" r="${radius*f}" class="radar-ring"/><text class="range-label" x="${cx-8}" y="${cy+radius*f-5}" text-anchor="end">${(maximum*f).toLocaleString('en-US',{maximumFractionDigits:1})}m</text>`).join('');
+ const bearings=Array.from({length:8},(_,i)=>{const a=i*45,[x,y]=xy(maximum,a),[tx,ty]=xy(maximum*1.1,a);return `<path class="radar-spoke" d="M${cx} ${cy}L${x} ${y}"/><text class="bearing-label" x="${tx}" y="${ty+4}" text-anchor="${a===90?'end':a===270?'start':'middle'}">${a}°</text>`;}).join('');
+ root.innerHTML=`<section class="panel radar-panel" data-component="radar"><div class="top"><div><div class="eyebrow">CONTACT GEOMETRY</div><div class="title">로그에서 재생한 접촉</div></div><button id="replay" aria-label="레이더 다시 재생">다시 재생</button></div><svg class="radar-svg" viewBox="0 0 600 440" role="img" aria-label="시뮬레이션 접촉 기하">${rings}${bearings}<g class="sweep" style="transform-origin:${cx}px ${cy}px"><path d="M${cx} ${cy}L${cx} ${cy-radius}"/></g><path d="M${cx-6} ${cy}h12m-6-6v12" stroke="var(--cyan)" stroke-width="2"/>${labelMarkup}${contacts}</svg><div class="radar-tooltip" aria-live="polite">접촉에 포인터를 올리거나 Tab으로 상세를 확인하세요.</div><div class="radar-legend"><span class="accepted">● 수락</span><span class="rejected">● 거부</span><span class="neutral">× 무응답</span><span>◇ C2 관측</span></div><div class="caption">장식 · 시뮬레이션 기하 · 실제 센서 아님<br>스윕은 탐지가 아닙니다. 좌표는 엔진 로그 그대로${labels.length?'':data.events.length?' · 밀집 접촉의 라벨은 상세 툴팁에 표시':''}.</div>${data.events.length?'':'<div class="caption">재생 대기 · 다음을 누르면 첫 엔진 이벤트가 나타납니다.</div>'}</section>`;
+ root.querySelectorAll('.range-label').forEach(label=>root.querySelector('.radar-svg').appendChild(label));
+ const nodes=[...root.querySelectorAll('.contact')];
+ nodes.forEach(node=>{const show=()=>{root.querySelector('.radar-tooltip').textContent=node.getAttribute('aria-label');};node.addEventListener('mouseenter',show);node.addEventListener('focus',show);});
+ draw=p=>{root.dataset.progress=p.toFixed(3);nodes.forEach(node=>{const start=Number(node.dataset.order)/Math.max(nodes.length,1)*.85;node.style.opacity=Math.max(0,Math.min((p-start)/.15,1));node.style.pointerEvents=p>=start?'auto':'none';});root.querySelector('.sweep').style.transform=`rotate(${p*240}deg)`;};
+}
 if(payload.kind==='protocol')protocol(payload.data);
 if(payload.kind==='pipeline')pipeline(payload.data);
+if(payload.kind==='radar')radar(payload.data);
 root.querySelector('#replay')?.addEventListener('click',replay);
 replay();document.fonts.ready.then(resize);

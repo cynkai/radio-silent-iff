@@ -7,6 +7,7 @@ from streamlit.testing.v1 import AppTest
 from iff.briefing import Brief, BriefResult
 from iff.briefing_session import BriefLimitReached, BriefSession, SESSION_LIMIT
 from iff.sandbox import Attack
+from visual_selectors import motion_data
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,7 +65,7 @@ def test_sandbox_controls_and_traffic_render_engine_results():
     assert not app.tabs[0].get("plotly_chart")
     app.button(key="FormSubmitter:traffic_form-트래픽 생성").click().run(timeout=20)
     assert not app.exception
-    assert len(app.tabs[1].get("plotly_chart")) == 2
+    assert len(app.tabs[1].get("plotly_chart")) + len(motion_data(app.tabs[1], "radar")) == 2
     table = app.tabs[1].dataframe[0].value
     assert table.iloc[-1]["tp"] == 75
     assert table.iloc[-1]["fp"] == 0

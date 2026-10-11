@@ -96,9 +96,13 @@ def apply_console_style() -> None:
     .js-plotly-plot {{ border-radius: .5rem; overflow: hidden; }}
     .st-key-motion_protocol iframe {{ height: 360px; }}
     .st-key-motion_pipeline iframe {{ height: 330px; }}
+    .st-key-motion_radar iframe {{ height: 560px; }}
+    .st-key-motion_radar [data-testid="stElementContainer"] {{ height: 560px !important; }}
     .st-key-motion_protocol [data-testid="stElementContainer"] {{ height: 360px !important; }}
     button:focus-visible {{ outline: 2px solid {ACCENT}; outline-offset: 2px; }}
     @media (max-width: 640px) {{
+        .st-key-motion_radar iframe {{ height: 530px; }}
+        .st-key-motion_radar [data-testid="stElementContainer"] {{ height: 530px !important; }}
         .st-key-motion_pipeline iframe {{ height: 510px; }}
         .st-key-motion_pipeline [data-testid="stElementContainer"] {{ height: 510px !important; }}
         .st-key-motion_protocol iframe {{ height: 510px; }}

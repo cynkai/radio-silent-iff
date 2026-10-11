@@ -3,10 +3,10 @@ from html import escape
 
 import streamlit as st
 
-from .console_charts import radar_figure
-from .events import Event
+from .events import Event, to_dicts
 from .rule_engine import Alert
-from .motion_components import render_pipeline_motion
+from .motion_components import render_pipeline_motion, render_radar_motion
+from . import detect, scenarios
 
 
 ALERT_LABELS = {
@@ -45,26 +45,28 @@ def render_pipeline(event: Event) -> None:
 
 
 def render_radar_detail(events: Sequence[Event], *, selection_key: str = "event_selection") -> None:
+    default_index = next((i for i, event in enumerate(events)
+                          if event.scenario == "S4" and event.reject_stage == "REVOKED"), len(events) - 1)
     radar, detail = st.columns([2, 1], gap="large")
-    with radar:
-        st.subheader("접촉 현황")
-        st.caption("시뮬레이션 기하 · 거리 (m) · 방위 (°)")
-        st.plotly_chart(radar_figure(events), width="stretch", key="radar")
-        st.caption("같은 좌표의 응답은 겹쳐 표시됩니다. 이벤트 선택에서 개별 기록을 확인하세요.")
+    index = None
     with detail:
         st.subheader("이벤트 상세")
         if not events:
             st.info("다음을 눌러 첫 이벤트를 재생하세요.")
-            return
-        default_index = next((i for i, event in enumerate(events)
-                              if event.scenario == "S4" and event.reject_stage == "REVOKED"), len(events) - 1)
-        index = st.selectbox("이벤트 선택", range(len(events)), index=default_index,
-                             format_func=lambda i: f"#{i + 1} · {events[i].scenario} · "
-                             f"{events[i].reject_stage or events[i].decision}", key=selection_key)
-        event = events[index]
-        st.markdown(f'<div class="mono alert-original">{escape(event.component)} · unit '
-                    f'{escape(event.unit_id)} · epoch {event.epoch}</div>', unsafe_allow_html=True)
-        render_pipeline(event)
+        else:
+            index = st.selectbox("이벤트 선택", range(len(events)), index=default_index,
+                                 format_func=lambda i: f"#{i + 1} · {events[i].scenario} · "
+                                 f"{events[i].reject_stage or events[i].decision}", key=selection_key)
+            event = events[index]
+            st.markdown(f'<div class="mono alert-original">{escape(event.component)} · unit '
+                        f'{escape(event.unit_id)} · epoch {event.epoch}</div>', unsafe_allow_html=True)
+            render_pipeline(event)
+    with radar:
+        st.subheader("접촉 현황")
+        st.caption("시뮬레이션 기하 · 거리 (m) · 방위 (°)")
+        render_radar_motion(events, detect.run_rules(to_dicts(events), revoked_hex=[scenarios.CAP.hex()]),
+                            index + 1 if index is not None else None)
+        st.caption("같은 좌표의 응답은 겹쳐 표시됩니다. 이벤트 선택에서 개별 기록을 확인하세요.")
 
 
 def render_alerts(alerts: Sequence[Alert]) -> None:

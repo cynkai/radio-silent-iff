@@ -4,6 +4,7 @@ from streamlit.testing.v1 import AppTest
 
 from iff.traffic import TrafficInput, detect_traffic, generate_traffic, measure, sweep
 from iff.traffic_view import performance_figure, traffic_until
+from visual_selectors import motion_data
 
 
 def test_scrubber_uses_only_past_events_and_keeps_truth_separate():
@@ -35,4 +36,4 @@ def test_traffic_initial_result_and_time_control():
     app.select_slider(key="traffic_time").set_value(traffic.events[9].ts_ns).run()
     assert not app.exception
     assert any("엔진 이벤트 10/300건" in item.value for item in app.markdown)
-    assert len(app.tabs[1].get("plotly_chart")) == 2
+    assert len(app.tabs[1].get("plotly_chart")) + len(motion_data(app.tabs[1], "radar")) == 2

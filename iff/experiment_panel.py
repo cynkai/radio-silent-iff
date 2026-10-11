@@ -6,10 +6,8 @@ import streamlit as st
 from .briefing_panel import render_briefing
 from .deep_sandbox import render_deep_sandbox
 from .experiment_presets import render_presets
-from .console_charts import radar_figure
-from .console_style import PANEL
 from .operator_console import render_alerts
-from .motion_components import render_pipeline_motion
+from .motion_components import render_pipeline_motion, render_radar_motion
 from .rule_engine import Alert
 from .sandbox import Attack, SandboxInput, run_experiment
 from .traffic import (Measurement, Performance, Traffic, TrafficInput, detect_traffic,
@@ -95,17 +93,9 @@ def render_traffic() -> None:
     st.markdown(f'현재 시각까지 <span style="white-space:nowrap">엔진 이벤트 {len(visible.events)}/{len(traffic.events)}건</span> · '
                 f'<span style="white-space:nowrap">수락 {sum(event.decision == "ACCEPT_FRIEND" for event in visible.events)}건</span> · '
                 f'<span style="white-space:nowrap">경보 {len(visible_alerts)}건</span>', unsafe_allow_html=True)
-    figure = radar_figure(visible.events)
-    figure.data = tuple(trace for trace in figure.data if trace.legendgroup != "radar_labels")
-    for trace in figure.data:
-        if trace.mode == "markers" and trace.customdata is not None:
-            trace.marker.size = 10
-        elif trace.mode == "text":
-            trace.text = [f"{radius:.0f}" for radius in trace.r]
-            trace.textfont.shadow = f"0 0 3px {PANEL}, 0 0 3px {PANEL}"
     radar, feed = st.columns([1.4, 1])
     with radar:
-        st.plotly_chart(figure, width="stretch", key="traffic_radar", theme=None)
+        render_radar_motion(visible.events, visible_alerts)
     with feed:
         st.markdown("**선택 시점까지의 경보**")
         with st.container(height=380):

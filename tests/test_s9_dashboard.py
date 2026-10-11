@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from streamlit.testing.v1 import AppTest
+from visual_selectors import motion_data
 
 
 def test_all_record_hides_selector_and_groups_alerts() -> None:
@@ -25,12 +26,12 @@ def test_s9_radar_preserves_coordinates_and_displays_no_response() -> None:
     app.selectbox(key="scenario").select("S9").run(timeout=20)
 
     assert not app.exception
-    spec = json.loads(app.tabs[0].get("plotly_chart")[0].proto.spec)
-    contacts = [trace for trace in spec["data"] if "customdata" in trace]
-    assert len(contacts) == 1
-    assert contacts[0]["marker"]["symbol"] == "x"
-    assert contacts[0]["r"] == [600, 700]
-    assert contacts[0]["theta"] == [280, 310]
-    assert "무응답" in contacts[0]["name"]
-    assert next(trace["text"] for trace in spec["data"] if trace["mode"] == "text") == ["S9a", "S9b"]
-    assert "title" not in spec["layout"]["polar"]["radialaxis"]
+    spec = motion_data(app.tabs[0], "radar")[0]
+    contacts = spec["events"]
+    assert len({(point["component"], point["decision"]) for point in contacts}) == 1
+    assert {point["symbol"] for point in contacts} == {"x"}
+    assert [point["range_m"] for point in contacts] == [600, 700]
+    assert [point["bearing_deg"] for point in contacts] == [280, 310]
+    assert {point["decision_label"] for point in contacts} == {"무응답"}
+    assert [label["text"] for label in spec["labels"]] == ["S9a", "S9b"]
+    assert "title" not in spec["radialaxis"]
