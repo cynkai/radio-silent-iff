@@ -61,3 +61,18 @@
 - 캡처: [전체 트래픽](img/phase5-desktop-traffic.png), [초기 시각](img/phase5-desktop-early.png),
   [성능 비교](img/phase5-desktop-metrics.png), [모바일](img/phase5-mobile-traffic.png),
   [모바일 성능](img/phase5-mobile-metrics.png).
+
+## Phase 6
+
+- PASS: README 상단 3분 데모 가이드와 9장면·원클릭 프리셋 사용법 반영.
+- PASS: Mermaid에 질의 인증, 판정/룰/정답 분리, JSON 필터→코드 조회→문장/ID 검증 경로 반영.
+  Mermaid 파싱 및 Chromium 렌더링 확인.
+- PASS: 최신 1440×900 / 390×844 첫 화면·프리셋 캡처와 README 미리보기 직접 확인.
+  가로 넘침·라벨 겹침·빈 첫 결과 없음. 새 기능 스크린샷을 README에 연결.
+- pytest **160 passed** (전체 AppTest 포함), `python3 scripts/run_all.py --seed 42`:
+  **ALL SCENARIOS MATCH EXPECTED: True**.
+- 기존 테스트·판정 엔진·시나리오·탐지 룰·기대값·경보 원문 변경 없음.
+- 캡처: [첫 화면](img/phase6-first.png), [프리셋](img/phase6-presets.png),
+  [모바일](img/phase6-mobile.png), [모바일 프리셋](img/phase6-mobile-presets.png),
+  [구조도 렌더](img/phase6-architecture.png), [README](img/phase6-readme-desktop.png),
+  [모바일 README](img/phase6-readme-mobile.png).
