@@ -18,7 +18,14 @@
 **운용자 질문**은 콘솔 아래에 있습니다. 예시 답변은 키 없이 볼 수 있으며 모든 문장에 이벤트 ID가 붙습니다.
 **교전 트래픽**에서는 시간 스크러버로 레이더·경보를 되돌리고, 룰별 막대와 BER 오탐 곡선을 함께 봅니다.
 
-![최신 첫 화면 · 3분 가이드 투어, 공격 실험, 한계 분석](docs/img/phase6-first.png)
+**[2분 데모 영상 보기 · WebM](docs/media/walkthrough.webm)** — 프로토콜 재생 → 9장면 투어 → 중계 25µs/40µs 비교 → 브리핑 근거 검증 → 한계 분석.
+영상의 LLM 구간은 화면에 명시된 오프라인 예시를 현재 엔진 로그로 다시 검증합니다.
+
+![최신 첫 화면 · 엔진 결과로 재생하는 프로토콜과 KPI](docs/img/visual-d-desktop-first.png)
+
+프로토콜·검증 관문·SVG 레이더·KPI의 **다시 재생** 버튼으로 장면을 반복할 수 있습니다.
+시스템의 모션 감소 설정에서는 최종 정지 화면을 표시합니다. 레이더 스윕은 장식이며 실제 센서가 아닙니다.
+경보 링은 룰의 타임스탬프 근거를 표시하므로 같은 시각의 기록은 함께 강조될 수 있습니다.
 
 > **시뮬레이션입니다.** 실기체·실채널·실측값이 없습니다. 표준 공개 암호 기법
 > (HKDF-SHA256, HMAC-SHA256, nonce 챌린지-응답)을 사용하며 Python으로 동작합니다.
@@ -79,9 +86,9 @@ LLM 경로는 판정 엔진으로 되돌아가지 않습니다. 스키마 검증
 
 ## 스크린샷
 
-![3분 투어 · 정상 아군 장면](docs/img/phase2-scene3.png)
+![공통 검증 파이프라인을 사용하는 가이드 투어](docs/img/visual-b-desktop-tour.png)
 
-![원클릭 공격 프리셋](docs/img/phase6-presets.png)
+![중계 40µs · RTT 관문에서 차단](docs/img/visual-b-desktop-rtt.png)
 
 ![중계 지연 경계 찾기](docs/img/phase3-desktop.png)
 
@@ -89,12 +96,16 @@ LLM 경로는 판정 엔진으로 되돌아가지 않습니다. 스키마 검증
 
 ![이벤트 ID로 검증한 운용자 질문 답변](docs/img/phase4-desktop-answer.png)
 
-![시간순 교전 트래픽과 해당 시점 경보](docs/img/phase5-desktop-traffic.png)
+![시간순 SVG 교전 트래픽과 해당 시점 경보](docs/img/visual-c-desktop-traffic.png)
 
 ![룰별 성능 막대와 BER 오탐 곡선](docs/img/phase5-desktop-metrics.png)
 
-[390px 모바일 첫 화면](docs/img/phase6-mobile.png) · [모바일 성능 차트](docs/img/phase5-mobile-metrics.png)
+[390px 모바일 첫 화면](docs/img/visual-d-mobile-first.png) · [모바일 성능 차트](docs/img/phase5-mobile-metrics.png)
 · [Phase별 PASS/FAIL 검증 기록](docs/upgrade-qa.md)
+· [시각 고도화 A–E 검증 기록](docs/visual-upgrade-qa.md)
+
+데모 재녹화: 로컬 Streamlit을 8502 포트에서 실행한 뒤 `python3 scripts/record_walkthrough.py`.
+기존 QA 환경의 Playwright와 Chromium을 사용하며 앱 의존성은 추가하지 않습니다.
 
 ## Quickstart
 

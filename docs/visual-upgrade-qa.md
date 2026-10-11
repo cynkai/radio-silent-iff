@@ -39,3 +39,16 @@ Screenshots are engine-derived live captures, not input data or stored simulatio
 - PASS: Four engine-derived KPI counts animate to their live totals; replay, static reduced-motion state and two-column mobile layout verified. Start/middle/end screenshots plus first-screen and alert views saved as `visual-d-*`.
 - PASS: No horizontal overflow or console/page errors at 1440/390. Warm first readiness 1311/1554 ms; no perceived delay.
 - PASS: pytest/AppTest 160 passed in 18.92 s; run_all S1–S9 all match. KPI AppTest selectors now read the custom component's injected counts instead of removed native metrics; expected values are unchanged.
+
+## Phase E — recorded walkthrough
+
+- PASS: `scripts/record_walkthrough.py` records actual Playwright browser interactions with `record_video_dir` and `record_video_size`. No production dependency added.
+- PASS: `docs/media/walkthrough.webm`: VP8, 1440×900, 127.92 seconds, 8,887,006 bytes. Signature scene → nine guide scenes → relay 25µs ACCEPT / 40µs RTT → briefing evidence verification → limits. Offline examples are visibly labeled and verified against the current engine logs.
+- PASS: Video contact sheet `visual-e-video-review.png`, the relay blocking frame `visual-e-video-rtt.png`, full briefing/limits captures, and desktop/mobile start-middle-end screenshots directly inspected. Initial recording's briefing framing was corrected by waiting for layout and scrolling again before the final recording.
+- PASS: Browser page/console errors: zero for the final 121.2-second recording process. Mobile capture reports zero errors and width 390; no overlapping labels or empty UI states. App code unchanged from Phase D; no perceived render slowdown.
+- PASS: Before final recording, `python3 -m pytest -q`: 160 passed in 19.06 s (including AppTest); `python3 scripts/run_all.py --seed 42`: every S1–S9 expectation matched.
+- PASS: README links the final video, updated first screen, SVG traffic and shared pipeline captures, and both QA ledgers.
+
+## Preservation audit
+
+Across A–E, protocol engine, scenarios, detection rules, expected simulation results and original alert message strings are unchanged. Changes to existing tests are confined to dashboard selectors for the new SVG/KPI components; the same counts, coordinates, shapes, labels and outcomes remain asserted. No dependency manifest changed. Scene values are injected from current engine events, never loaded from screenshots or recordings.
