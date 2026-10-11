@@ -49,3 +49,15 @@
 - pytest **157 passed**, AppTest 포함; run_all S1~S9 기대값 일치.
 - 캡처: [데스크톱](img/phase4-desktop.png), [답변](img/phase4-desktop-answer.png),
   [모바일](img/phase4-mobile.png), [모바일 답변](img/phase4-mobile-answer.png).
+
+## Phase 5
+
+- PASS: 교전 시간 스크러버가 엔진 이벤트의 시간순 누적 레이더와 해당 접두 로그의 경보에 연동.
+- PASS: 룰별 탐지율·오탐률 막대와 BER 오탐 곡선을 한 그림에 배치. 룰별 곡선 선택 가능.
+- PASS: 정답 sidecar는 탐지 입력에서 계속 분리. 차트 수치는 기존 measure/sweep의 실행 결과.
+- PASS: 1440×900 / 390×844 직접 검토. 초기·최종 시각 화면과 성능 차트에서 가로 넘침,
+  겹치는 라벨, 빈 초기 결과 없음. 경보 0건은 엔진 결과에 따라 명시적으로 표시.
+- pytest **160 passed**, AppTest 포함; run_all S1~S9 기대값 일치.
+- 캡처: [전체 트래픽](img/phase5-desktop-traffic.png), [초기 시각](img/phase5-desktop-early.png),
+  [성능 비교](img/phase5-desktop-metrics.png), [모바일](img/phase5-mobile-traffic.png),
+  [모바일 성능](img/phase5-mobile-metrics.png).

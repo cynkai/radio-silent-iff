@@ -1,20 +1,20 @@
 from dataclasses import asdict
 from pathlib import Path
 
-import plotly.graph_objects as go
 import streamlit as st
 
 from .briefing_panel import render_briefing
 from .deep_sandbox import render_deep_sandbox
 from .experiment_presets import render_presets
 from .console_charts import radar_figure, rtt_figure
-from .console_style import ACCENT, GRID, PANEL, TEXT
+from .console_style import PANEL
 from .operator_console import render_alerts
 from .rule_engine import Alert
 from .sandbox import Attack, PIPELINE, SandboxInput, pipeline_states, run_experiment
 from .traffic import (Measurement, Performance, Traffic, TrafficInput, detect_traffic,
                       generate_traffic, measure, sweep)
 from .traffic_report import render_traffic_outcomes
+from .traffic_view import performance_figure, traffic_until
 
 
 def render_sandbox() -> None:
@@ -86,42 +86,52 @@ def render_traffic() -> None:
         ber = right.number_input("트래픽 BER", 0.0, 1.0, 0.0, 0.001, format="%.3f", key="traffic_ber")
         if st.form_submit_button("트래픽 생성", type="primary"):
             st.session_state.traffic_input = TrafficInput(benign=benign, attacks=attacks, seed=seed, ber=ber)
+            st.session_state.pop("traffic_time", None)
     if "traffic_input" not in st.session_state:
-        st.info("트래픽 생성을 누르면 레이더와 성능 측정 결과를 표시합니다.")
-        return
+        st.session_state.traffic_input = TrafficInput()
     inputs = st.session_state.traffic_input
     with st.spinner("엔진으로 교전과 BER 스윕 실행 중…"):
         traffic, alerts, metrics, measurements = traffic_report(inputs)
     st.caption(f"실행 입력 · N={inputs.benign} · M={inputs.attacks} · seed={inputs.seed} · BER={inputs.ber:g}")
-    st.write(f"엔진 이벤트 {len(traffic.events)}건 · 수락 "
-             f"{sum(event.decision == 'ACCEPT_FRIEND' for event in traffic.events)}건 · 경보 {len(alerts)}건")
-    figure = radar_figure(traffic.events)
+    if not traffic.events:
+        st.info("생성할 표본이 없습니다. N 또는 M을 1 이상으로 설정하세요.")
+        return
+    stamps = sorted({event.ts_ns for event in traffic.events})
+    timestamp = st.select_slider("교전 시간", options=stamps, value=stamps[-1],
+                                 format_func=lambda value: f"{value / 1e9:.3f}s", key="traffic_time")
+    visible = traffic_until(traffic, timestamp)
+    visible_alerts = detect_traffic(visible.events)
+    st.markdown(f'현재 시각까지 <span style="white-space:nowrap">엔진 이벤트 {len(visible.events)}/{len(traffic.events)}건</span> · '
+                f'<span style="white-space:nowrap">수락 {sum(event.decision == "ACCEPT_FRIEND" for event in visible.events)}건</span> · '
+                f'<span style="white-space:nowrap">경보 {len(visible_alerts)}건</span>', unsafe_allow_html=True)
+    figure = radar_figure(visible.events)
     figure.data = tuple(trace for trace in figure.data if trace.legendgroup != "radar_labels")
-    st.plotly_chart(figure, width="stretch", key="traffic_radar", theme=None)
-    render_traffic_outcomes(traffic, alerts)
+    for trace in figure.data:
+        if trace.mode == "markers" and trace.customdata is not None:
+            trace.marker.size = 10
+        elif trace.mode == "text":
+            trace.text = [f"{radius:.0f}" for radius in trace.r]
+            trace.textfont.shadow = f"0 0 3px {PANEL}, 0 0 3px {PANEL}"
+    radar, feed = st.columns([1.4, 1])
+    with radar:
+        st.plotly_chart(figure, width="stretch", key="traffic_radar", theme=None)
+    with feed:
+        st.markdown("**선택 시점까지의 경보**")
+        with st.container(height=380):
+            render_alerts(visible_alerts)
     st.markdown("**룰별 경보 성능**")
+    st.caption("아래 성능 비교는 전체 생성 트래픽 기준입니다. 시간 스크러버는 위 레이더와 경보에 적용됩니다.")
+    selected_rule = st.selectbox("BER 곡선의 룰", [metric.rule for metric in metrics],
+                                 index=len(metrics) - 1, key="traffic_curve_rule")
+    st.plotly_chart(performance_figure(metrics, measurements, selected_rule),
+                    width="stretch", key="traffic_ber_curve", theme=None)
     st.caption("경보 근거의 고유 이벤트 단위. TP·FN 분모는 모든 공격 M건, FP·TN 분모는 정상 N건입니다. "
                "ANY_RULE은 중복 제거한 합집합입니다. detection_rate는 경보율이며 차단율이 아닙니다. "
                "해당 표본이 없으면 비율은 비어 있습니다.")
     st.dataframe([asdict(row) for row in metrics], hide_index=True, width="stretch")
-    st.markdown("**BER 대비 오탐 곡선**")
-    chart = go.Figure()
-    for index, metric in enumerate(metrics):
-        chart.add_trace(go.Scatter(x=[row.ber for row in measurements],
-                                  y=[row.metrics[index].false_positive_rate for row in measurements],
-                                  mode="lines+markers", name=metric.rule.split("_")[0],
-                                  visible=True if metric.rule == "ANY_RULE" else "legendonly"))
-    peak = max((metric.false_positive_rate or 0 for row in measurements for metric in row.metrics), default=0)
-    chart.update_layout(height=360, paper_bgcolor=PANEL, plot_bgcolor=PANEL,
-                        font={"color": TEXT}, colorway=[ACCENT],
-                        legend={"orientation": "h", "y": -0.35},
-                        xaxis={"title": "비트오류율 (BER)", "gridcolor": GRID},
-                        yaxis={"title": "오탐률", "range": [0, max(peak * 1.2, 0.01)],
-                               "tickformat": ".1%", "gridcolor": GRID},
-                        margin={"l": 64, "r": 16, "t": 16, "b": 88})
-    st.plotly_chart(chart, width="stretch", key="traffic_ber_curve", theme=None)
     st.caption("동일 시드·기하·공격 구성을 유지한 paired sweep입니다. 유한 표본과 창 기반 룰 특성상 "
-               "곡선은 단조 증가를 보장하지 않습니다. 범례를 누르면 룰별 곡선을 볼 수 있습니다.")
+               "곡선은 단조 증가를 보장하지 않습니다. 위 선택창에서 룰별 곡선을 볼 수 있습니다.")
+    render_traffic_outcomes(traffic, alerts)
     with st.expander("스윕 측정값 / 이벤트 / 정답 sidecar"):
         st.dataframe([{**asdict(metric), "ber": row.ber} for row in measurements
                       for metric in row.metrics], hide_index=True)
