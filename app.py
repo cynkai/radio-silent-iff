@@ -26,6 +26,7 @@ from iff.operator_console import render_radar_detail, render_feed, render_alerts
 from iff.experiment_panel import render_experiments
 from iff.guide_tour import render_tour, start_tour
 from iff.operator_query_panel import render_operator_query
+from iff.motion_components import render_protocol
 
 st.set_page_config(page_title="IFF · 운용자 콘솔", layout="wide", initial_sidebar_state="collapsed")
 
@@ -76,6 +77,7 @@ if workspace == "공격 실험":
 if st.session_state.get("tour_active", False):
     render_tour()
     st.stop()
+signature = st.container(key="signature_scene")
 kpi_strip = st.container(key="kpi_strip")
 
 sb = st.sidebar
@@ -89,6 +91,11 @@ sb.caption(f"한계 분석 RTT 예산 ≈ {budget/1000:.1f} µs")
 sb.caption("시드 외 실험 파라미터는 한계 분석용입니다. 콘솔은 시나리오의 기본 설정을 표시합니다.")
 
 results = scenarios.run_all(seed=seed, include_grace=True, include_rogue=True)
+with signature:
+    signature_scenario = st.selectbox("프로토콜 장면", list(results), key="signature_scenario")
+    scene_events = results[signature_scenario]["events"]
+    scene_index = next((i for i, event in enumerate(scene_events) if event.decision != "ACCEPT_FRIEND"), 0)
+    render_protocol(scene_events[scene_index])
 all_events = [event for result in results.values() for event in result["events"]]
 if st.session_state.get("replay_seed") != seed:
     st.session_state.replay_seed = seed

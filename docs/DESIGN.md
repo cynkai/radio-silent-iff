@@ -11,7 +11,34 @@ reuses radar/detail; the captured-aircraft scene also highlights the timeline.
 
 The existing Streamlit dashboard supplies tabs, controls, data tables, and Plotly charts.
 The redesign prioritizes an event-backed radar and inspection pane over repeated pipeline charts.
-No additional dependencies, contact synthesis, or automatic animation are permitted.
+No additional dependencies or contact synthesis are permitted. The animation extension below
+supersedes the original static presentation rules at the user's explicit request.
+
+## Event replay visual system · A–E
+
+The signature is a luminous optical exchange on an instrument panel: directional cyan
+light, machined SVG endpoints, dark inset tracks, and an unambiguous verdict. Existing
+IBM Plex typography and semantic colors remain. Primary surfaces use #162534 with a
+subtle top light; secondary #111c28; informational #0e1721. A 32px grid at 3% opacity
+adds context without resembling a sensor measurement. Titles 32/24px, numbers 36px,
+body 14–16px and supporting labels 12px establish hierarchy.
+
+Reusable vanilla SVG/JS primitives live in a components.v1.html document with escaped
+engine JSON. The protocol exchange, six gates, SVG radar and count-up each expose a
+keyboard-accessible replay button. Motion is a single illustrative replay, never a
+physical time scale or a decision engine. prefers-reduced-motion renders the complete
+static state, including after replay; offscreen documents pause. Transform and opacity
+carry packets/fades. The maximum illustrative exchange duration is 7 seconds.
+
+Mobile uses vertical endpoint/gate layouts and wrapping text, with no horizontal scroll.
+Native Streamlit selectors remain accessible outside frames. Frame contents never read
+parent DOM or modify engine/session state. Alert stripes are an explicit user requirement.
+Simulation and decorative-sweep disclosures are visible within visualizations.
+
+Reference mechanisms: beui.dev motion primitives (reduced-motion state), react-bits
+CountUp (elapsed-time interpolation to an input target), existing supporting-pane layout.
+No source files or dependencies are vendored. Baseline and per-phase rendered timings,
+console errors, motion frames and reduced-motion evidence are recorded in visual QA.
 
 ## Console tokens
 
