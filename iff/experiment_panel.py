@@ -6,11 +6,12 @@ import streamlit as st
 from .briefing_panel import render_briefing
 from .deep_sandbox import render_deep_sandbox
 from .experiment_presets import render_presets
-from .console_charts import radar_figure, rtt_figure
+from .console_charts import radar_figure
 from .console_style import PANEL
 from .operator_console import render_alerts
+from .motion_components import render_pipeline_motion
 from .rule_engine import Alert
-from .sandbox import Attack, PIPELINE, SandboxInput, pipeline_states, run_experiment
+from .sandbox import Attack, SandboxInput, run_experiment
 from .traffic import (Measurement, Performance, Traffic, TrafficInput, detect_traffic,
                       generate_traffic, measure, sweep)
 from .traffic_report import render_traffic_outcomes
@@ -46,20 +47,10 @@ def render_sandbox() -> None:
         st.error("방어 실패 — 알려진 한계")
         st.markdown("[README · 가정과 한계](?workspace=experiments&limits=1#experiment-limits)")
     st.write(f"**엔진 판정: {event.decision} · {event.reject_stage or 'ACCEPT'}**")
-    pipeline, timing = st.columns(2)
-    with pipeline:
-        st.markdown("**6단계 검증 파이프라인**")
-        for stage, status in zip(PIPELINE, pipeline_states(event)):
-            state = {"통과": "pass", "차단": "fail", "미도달": "wait"}[status]
-            st.markdown(f'<div class="step {state}"><span>{stage}</span><span>{status}</span></div>',
-                        unsafe_allow_html=True)
-    with timing:
-        if event.rtt_ns is None:
-            st.info(f"RTT 미측정 · {event.reject_stage}에서 차단")
-            st.caption("응답이 없거나 RTT 단계에 도달하지 않았습니다. 임의 RTT를 표시하지 않습니다.")
-        else:
-            st.plotly_chart(rtt_figure(event), width="stretch", key="sandbox_rtt", theme=None)
-            st.caption(f"검증 RTT {event.rtt_ns / 1000:.3f}µs / 예산 {result.budget_ns / 1000:.3f}µs")
+    st.markdown("**6단계 검증 파이프라인**")
+    render_pipeline_motion(event)
+    if event.rtt_ns is None:
+        st.caption("응답이 없거나 RTT 단계에 도달하지 않았습니다. 임의 RTT를 표시하지 않습니다.")
     st.markdown("**탐지 경보**")
     render_alerts(alerts)
     render_briefing([event], alerts, key="sandbox_brief", show_example=False)

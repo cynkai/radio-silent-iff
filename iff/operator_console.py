@@ -3,9 +3,10 @@ from html import escape
 
 import streamlit as st
 
-from .console_charts import radar_figure, rtt_figure
-from .events import Event, STAGES
+from .console_charts import radar_figure
+from .events import Event
 from .rule_engine import Alert
+from .motion_components import render_pipeline_motion
 
 
 ALERT_LABELS = {
@@ -30,29 +31,17 @@ def reset_replay() -> None:
 
 
 def render_pipeline(event: Event) -> None:
+    render_pipeline_motion(event)
     if event.component == "CQ":
         badge, label = ("neutral", "무응답 · 질의 차단") if event.decision == "NO_RESPONSE" else ("accept", "질의 인증 통과")
         st.markdown(f'<span class="console-badge {badge}">{label}</span>', unsafe_allow_html=True)
         st.caption(f"응답기 로컬 기록 · {event.reject_stage or '유효한 질의'}")
         return
-    blocked = False
-    for stage in STAGES[:-1]:
-        state, label = "pass", "✓ 통과"
-        if event.component != "C1":
-            state, label = "wait", "— 해당 없음"
-        elif blocked:
-            state, label = "wait", "— 미도달"
-        elif event.reject_stage == stage:
-            state, label, blocked = "fail", "✗ 차단", True
-        st.markdown(f'<div class="step {state}"><span>{stage}</span><span>{label}</span></div>',
-                    unsafe_allow_html=True)
     if event.component == "C2":
         st.caption("C2는 C1 파이프라인을 사용하지 않습니다.")
         st.write(f"기동 해밍 검증: {event.reject_stage or event.decision}")
     elif event.rtt_ns is None:
         st.caption("RTT 단계 미도달 · 검증 RTT 기록 없음")
-    else:
-        st.plotly_chart(rtt_figure(event), width="stretch", key="rtt_gauge")
 
 
 def render_radar_detail(events: Sequence[Event], *, selection_key: str = "event_selection") -> None:

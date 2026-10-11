@@ -30,6 +30,18 @@ function protocol(e){
  root.querySelectorAll('.scene').forEach(svg=>{const track=svg.querySelector('.packet-track'),packet=svg.querySelector('.packet');const progress=p<.35?p/.35:p<.5?1:(replayAttack?.5:1)*(1-Math.min((p-.5)/.3,1));const at=track.getPointAtLength(track.getTotalLength()*progress);packet.setAttribute('transform',`translate(${at.x} ${at.y})`);packet.style.opacity=c2||end||(rogue&&p>=.5)?'0':'1';svg.querySelector('.wire').style.opacity=rogue&&p>=.5?'0':'.8';svg.querySelector('.beam').style.opacity=rogue&&p>=.5?'0':'.06';svg.querySelector('.endpoint').style.stroke=end&&e.decision==='REJECT'?'var(--fail)':'';});
  const ratio=e.rtt_ns===null?0:e.rtt_ns/Math.max(e.rtt_ns,e.budget_ns);root.querySelector('.budget-fill').style.transform=`scaleX(${ratio*Math.min(p/.9,1)})`;root.querySelector('.budget-fill').style.background=e.reject_stage==='RTT'?'var(--fail)':'var(--cyan)';root.querySelector('.budget-marker').style.left=`${e.budget_ns/Math.max(e.rtt_ns||0,e.budget_ns)*100}%`;};
 }
+function pipeline(e){
+ const stages=['FORMAT','EPOCH','REVOKED','NONCE','TAG','RTT'];
+ const active=e.component==='C1',failed=e.states.indexOf('차단'),last=failed<0?5:failed;
+ root.innerHTML=`<section class="panel pipeline" data-component="pipeline"><div class="top"><div><div class="eyebrow">VERIFY / ${esc(e.scenario)}</div><div class="title">응답이 지나는 관문</div></div><button id="replay" aria-label="파이프라인 다시 재생">다시 재생</button></div><div class="gates">${stages.map((stage,i)=>`<div class="gate" data-stage="${stage}"><div class="gate-dot">${i+1}</div><strong>${stage}</strong><span class="gate-state">대기</span>${stage==='RTT'?'<div class="budget"><div class="budget-fill"></div><i class="budget-marker"></i></div>':''}</div>`).join('')}<i class="traveler"></i></div><div class="verdict ${color(e)}"></div><div class="facts">${e.rtt_ns===null?'검증 RTT 기록 없음':`RTT ${(e.rtt_ns/1000).toFixed(3)}µs / 예산 ${(e.budget_ns/1000).toFixed(3)}µs`}</div><div class="caption">${active?'시뮬레이션 · 엔진 검증 결과를 순서대로 재생합니다.':`시뮬레이션 · ${esc(e.component)} 기록은 C1 관문을 거치지 않습니다.`}</div></section>`;
+ const gates=[...root.querySelectorAll('.gate')],packet=root.querySelector('.traveler');
+ draw=p=>{root.dataset.progress=p.toFixed(3);const step=p*(last+1);gates.forEach((gate,i)=>{const reached=active&&step>=i+(i===failed?.55:.8),state=reached||p===1?e.states[i]:'대기';gate.classList.toggle('passed',state==='통과');gate.classList.toggle('failed',state==='차단');gate.classList.toggle('flash',state==='차단'&&p<1);gate.querySelector('.gate-state').textContent=active?state:'해당 없음';});
+ const index=Math.min(Math.floor(step),last),gate=gates[index];packet.style.left=`${gate.offsetLeft+gate.offsetWidth/2}px`;packet.style.top=`${gate.offsetTop+17}px`;packet.style.opacity=active&&p<1?'1':'0';
+ root.querySelector('.verdict').textContent=p===1?`${e.decision} · ${verdict(e)}`:active?'응답 패킷 검증 중':'C1 관문 해당 없음';root.querySelector('.verdict').classList.toggle('stamp',p===1&&e.decision==='ACCEPT_FRIEND');
+ const ratio=e.rtt_ns===null?0:e.rtt_ns/Math.max(e.rtt_ns,e.budget_ns);root.querySelector('.budget-fill').style.transform=`scaleX(${ratio*Math.max(0,Math.min(step-5,1))})`;root.querySelector('.budget-fill').style.background=e.reject_stage==='RTT'?'var(--fail)':'var(--pass)';root.querySelector('.budget-marker').style.left=`${e.budget_ns/Math.max(e.rtt_ns||0,e.budget_ns)*100}%`;
+ };
+}
 if(payload.kind==='protocol')protocol(payload.data);
+if(payload.kind==='pipeline')pipeline(payload.data);
 root.querySelector('#replay')?.addEventListener('click',replay);
 replay();document.fonts.ready.then(resize);

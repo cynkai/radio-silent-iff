@@ -28,3 +28,7 @@ def render_motion(kind: str, data: object, *, height: int = 340) -> None:
 
 def render_protocol(event: Event) -> None:
     render_motion("protocol", event_payload(event), height=340)
+
+
+def render_pipeline_motion(event: Event) -> None:
+    render_motion("pipeline", event_payload(event), height=330)
