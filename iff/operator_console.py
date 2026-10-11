@@ -7,6 +7,7 @@ from .events import Event, to_dicts
 from .rule_engine import Alert
 from .motion_components import render_pipeline_motion, render_radar_motion
 from . import detect, scenarios
+from .visual_icons import icon
 
 
 ALERT_LABELS = {
@@ -79,9 +80,9 @@ def render_alerts(alerts: Sequence[Alert]) -> None:
         alert = group[0]
         originals = "".join(f'<div class="alert-original">{escape(item["message"])}</div>' for item in group)
         st.markdown(
-            f'<div class="console-row"><span class="console-badge {escape(alert["severity"])}">'
+            f'<div class="console-row alert-card severity-{escape(alert["severity"])}"><span class="console-badge {escape(alert["severity"])}">'
             f'{escape(alert["severity"])}</span> <strong>{escape(rule.split("_")[0])} ×{len(group)}</strong><br>'
-            f'<div class="alert-title">{escape(ALERT_LABELS.get(rule, rule))}</div>'
+            f'<div class="alert-title">{icon(rule.split("_")[0])}{escape(ALERT_LABELS.get(rule, rule))}</div>'
             f'{originals}</div>', unsafe_allow_html=True)
 
 
@@ -99,7 +100,7 @@ def render_feed(events: Sequence[Event], alerts: Sequence[Alert]) -> None:
                             "NO_RESPONSE": ("neutral", "무응답")}[event.decision]
             st.markdown(
                 f'<div class="console-row"><span class="console-badge {badge}">'
-                f'{label}</span> '
+                f'{icon(badge)}{label}</span> '
                 f'<strong class="mono">#{index + 1} · {escape(event.scenario)} · {escape(event.component)}</strong> '
                 f'&nbsp; <span class="mono">{escape(event.reject_stage or event.decision)}</span><br>'
                 f'<span class="mono">{event.bearing_deg:g}° / {event.range_m:g} m · ts {event.ts_ns} ns</span><br>'

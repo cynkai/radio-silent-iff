@@ -59,8 +59,14 @@ function radar(data){
  nodes.forEach(node=>{const show=()=>{root.querySelector('.radar-tooltip').textContent=node.getAttribute('aria-label');};node.addEventListener('mouseenter',show);node.addEventListener('focus',show);});
  draw=p=>{root.dataset.progress=p.toFixed(3);nodes.forEach(node=>{const start=Number(node.dataset.order)/Math.max(nodes.length,1)*.85;node.style.opacity=Math.max(0,Math.min((p-start)/.15,1));node.style.pointerEvents=p>=start?'auto':'none';});root.querySelector('.sweep').style.transform=`rotate(${p*240}deg)`;};
 }
+function kpis(items){
+ duration=1600;
+ root.innerHTML=`<section data-component="kpi"><div class="kpi-heading"><span>현재 표시 로그 · 엔진 집계</span><button id="replay" aria-label="KPI 다시 재생">다시 재생</button></div><div class="kpi-grid">${items.map((item,i)=>`<article class="kpi-card kpi-${i}" aria-label="${esc(`${item.label} ${item.value} · ${item.explanation}`)}"><div class="kpi-label">${item.icon}${esc(item.label)}</div><div class="kpi-number" aria-hidden="true">0</div><div class="kpi-explanation">${esc(item.explanation)}</div></article>`).join('')}</div></section>`;
+ draw=p=>{root.dataset.progress=p.toFixed(3);root.querySelectorAll('.kpi-number').forEach((node,i)=>{node.textContent=Math.round(items[i].value*(1-Math.pow(1-p,3))).toLocaleString();});};
+}
 if(payload.kind==='protocol')protocol(payload.data);
 if(payload.kind==='pipeline')pipeline(payload.data);
 if(payload.kind==='radar')radar(payload.data);
+if(payload.kind==='kpi')kpis(payload.data);
 root.querySelector('#replay')?.addEventListener('click',replay);
 replay();document.fonts.ready.then(resize);

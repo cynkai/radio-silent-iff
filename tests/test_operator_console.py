@@ -5,7 +5,7 @@ from streamlit.testing.v1 import AppTest
 
 from iff import detect, scenarios
 from iff.events import to_dicts
-from visual_selectors import motion_data
+from visual_selectors import motion_data, kpi_values
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,13 +32,13 @@ def test_replay_reveals_exact_event_prefix_and_resets() -> None:
 
     app.radio(key="view_mode").set_value("공격 재생").run(timeout=20)
 
-    assert app.metric[0].value == "0"
+    assert kpi_values(app)[0] == "0"
     for count in range(1, len(events) + 1):
         app.button(key="replay_next").click().run(timeout=20)
         shown = events[:count]
         alerts = detect.run_rules(to_dicts(shown), revoked_hex=[scenarios.CAP.hex()])
         assert not app.exception
-        assert [metric.value for metric in app.metric] == [
+        assert kpi_values(app) == [
             str(count), str(sum(event.decision == "ACCEPT_FRIEND" for event in shown)),
             str(sum(event.decision == "REJECT" for event in shown)),
             str(sum(alert["severity"] == "high" for alert in alerts)),
@@ -54,7 +54,7 @@ def test_replay_reveals_exact_event_prefix_and_resets() -> None:
     app.button(key="replay_reset").click().run(timeout=20)
 
     assert not app.exception
-    assert app.metric[0].value == "0"
+    assert kpi_values(app)[0] == "0"
     assert not app.button(key="replay_next").disabled
     assert len(app.tabs[1].dataframe[0].value) == 0
 
@@ -66,7 +66,7 @@ def test_c2_selection_has_no_rtt_gauge_and_seed_restarts_replay() -> None:
     app.selectbox(key="scenario").select("S6").run(timeout=20)
 
     assert not app.exception
-    assert app.metric[0].value == "2"
+    assert kpi_values(app)[0] == "2"
     assert len(motion_data(app.tabs[0], "radar")) == 1
     assert not app.tabs[0].get("plotly_chart")
 
@@ -75,7 +75,7 @@ def test_c2_selection_has_no_rtt_gauge_and_seed_restarts_replay() -> None:
     app.sidebar.number_input[0].set_value(7).run(timeout=20)
 
     assert not app.exception
-    assert app.metric[0].value == "0"
+    assert kpi_values(app)[0] == "0"
 
 
 def test_timeline_contains_only_s4_s8_events() -> None:

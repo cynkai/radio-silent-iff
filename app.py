@@ -26,7 +26,7 @@ from iff.operator_console import render_radar_detail, render_feed, render_alerts
 from iff.experiment_panel import render_experiments
 from iff.guide_tour import render_tour, start_tour
 from iff.operator_query_panel import render_operator_query
-from iff.motion_components import render_protocol
+from iff.motion_components import render_protocol, render_kpis
 
 st.set_page_config(page_title="IFF · 운용자 콘솔", layout="wide", initial_sidebar_state="collapsed")
 
@@ -122,14 +122,7 @@ with tab1:
         visible_events = all_events
     alerts = detect.run_rules(to_dicts(visible_events), revoked_hex=[scenarios.CAP.hex()])
     with kpi_strip:
-        metrics = st.columns(4)
-        metrics[0].metric("질의 수", len(visible_events), help="표시된 이벤트 수입니다. C2 관측 판정도 포함합니다.")
-        metrics[1].metric("수락", sum(event.decision == "ACCEPT_FRIEND" for event in visible_events))
-        metrics[2].metric("거부", sum(event.decision == "REJECT" for event in visible_events))
-        metrics[3].metric("high 경보", sum(alert["severity"] == "high" for alert in alerts))
-        for column, explanation in zip(metrics, ("C1 질의 · C2 관측 포함", "아군 인증을 통과한 기록",
-                                                 "검증 단계에서 차단된 기록", "우선 확인할 고위험 탐지")):
-            column.caption(explanation)
+        render_kpis(visible_events, alerts)
     render_radar_detail(visible_events)
     render_feed(visible_events, alerts)
     render_briefing(visible_events, alerts)

@@ -7,3 +7,7 @@ def motion_data(element, kind):
     payloads = [json.loads(re.search(r'<script type="application/json" id="engine-data">(.*?)</script>',
                                     document, re.S).group(1)) for document in documents]
     return [payload["data"] for payload in payloads if payload["kind"] == kind]
+
+
+def kpi_values(element):
+    return [str(item["value"]) for item in motion_data(element, "kpi")[0]]

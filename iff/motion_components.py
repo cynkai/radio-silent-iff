@@ -10,6 +10,7 @@ from . import config
 from .events import Event
 from .sandbox import pipeline_states
 from .rule_engine import Alert
+from .visual_icons import icon
 
 
 def event_payload(event: Event) -> dict[str, object]:
@@ -34,6 +35,16 @@ def render_protocol(event: Event) -> None:
 
 def render_pipeline_motion(event: Event) -> None:
     render_motion("pipeline", event_payload(event), height=330)
+
+
+def render_kpis(events: Sequence[Event], alerts: Sequence[Alert]) -> None:
+    values = (len(events), sum(event.decision == "ACCEPT_FRIEND" for event in events),
+              sum(event.decision == "REJECT" for event in events), sum(alert["severity"] == "high" for alert in alerts))
+    labels = ("질의 수", "수락", "거부", "high 경보")
+    explanations = ("C1 질의 · C2 관측 포함", "아군 인증을 통과한 기록", "검증 단계에서 차단된 기록", "우선 확인할 고위험 탐지")
+    icons = ("count", "accept", "reject", "alert")
+    render_motion("kpi", [{"label": label, "value": value, "explanation": explanation, "icon": icon(symbol)}
+                          for label, value, explanation, symbol in zip(labels, values, explanations, icons)], height=160)
 
 
 def render_radar_motion(events: Sequence[Event], alerts: Sequence[Alert], selected: int | None = None) -> None:

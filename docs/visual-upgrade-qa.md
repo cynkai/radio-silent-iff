@@ -31,3 +31,11 @@ Screenshots are engine-derived live captures, not input data or stored simulatio
 - Selector-only AppTest migration: five dashboard test files now select the SVG iframe JSON instead of the removed Plotly chart. Coordinate, shape, no-response, scenario-label and chart-count expectations remain equivalent. No decision tests or expected simulation outcomes changed.
 - PASS: Browser checks verified every SVG contact transform against its injected engine bearing/range; keyboard tooltip, one selected ring and reduced-motion final state. Traffic slider changed 300 contacts to the two-event prefix at both widths, with matching prefix alerts.
 - Final selection synchronization uses the detail widget's returned index. Revalidation: 160 tests passed in 19.74 s and all scenarios matched; fresh captures show unchanged layout, zero browser errors and widths 1440/390.
+
+## Phase D — visual hierarchy
+
+- PASS: Very faint grid, larger section headings, primary luminous protocol/pipeline cards, secondary KPI/radar surfaces and darker information cards.
+- PASS: Shared inline SVG icons for verdicts and R1–R7; alert cards have severity-colored left borders while original English messages remain intact below Korean labels.
+- PASS: Four engine-derived KPI counts animate to their live totals; replay, static reduced-motion state and two-column mobile layout verified. Start/middle/end screenshots plus first-screen and alert views saved as `visual-d-*`.
+- PASS: No horizontal overflow or console/page errors at 1440/390. Warm first readiness 1311/1554 ms; no perceived delay.
+- PASS: pytest/AppTest 160 passed in 18.92 s; run_all S1–S9 all match. KPI AppTest selectors now read the custom component's injected counts instead of removed native metrics; expected values are unchanged.

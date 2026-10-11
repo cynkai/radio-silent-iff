@@ -22,7 +22,10 @@ def apply_console_style() -> None:
     :root {{ --console-panel: {PANEL}; --console-text: {TEXT};
              --console-muted: {MUTED}; --console-pass: {ACCEPT};
              --console-fail: {REJECT}; --console-wait: {WAITING}; }}
-    .stApp {{ background: {BACKGROUND}; color: {TEXT}; }}
+    .stApp {{ background-color: {BACKGROUND}; color: {TEXT};
+        background-image: linear-gradient(#5ad4e603 1px, transparent 1px),
+                          linear-gradient(90deg, #5ad4e603 1px, transparent 1px);
+        background-size: 40px 40px; }}
     .stApp, .stApp p, .stApp label, .stApp button, .stApp input,
     [data-testid="stText"],
     .stApp h1, .stApp h2, .stApp h3, .disclosure, .alert-title, .console-row {{ font-family: {BODY_FONT}; }}
@@ -31,8 +34,9 @@ def apply_console_style() -> None:
     [data-testid="stVerticalBlock"] {{ gap: .5rem; }}
     [data-testid="stMarkdownContainer"] {{ margin-bottom: 0; }}
     [data-testid="stMarkdownContainer"] p {{ margin-bottom: 0; }}
-    h1 {{ font-size: 1.75rem !important; letter-spacing: -.03em; padding: 0 !important; }}
-    h2, h3 {{ font-size: 1.2rem !important; padding: .25rem 0 !important; }}
+    h1 {{ font-size: 2.25rem !important; letter-spacing: -.04em; padding: 0 !important; }}
+    h2, h3 {{ font-size: 1.5rem !important; letter-spacing: -.025em; padding: .5rem 0 .25rem !important; }}
+    [data-testid="stHeading"] {{ margin-top: .6rem; }}
     h1, h2, h3, p {{ word-break: keep-all; overflow-wrap: anywhere; }}
     [data-testid="stHeading"] [data-testid="stMarkdownContainer"],
     [data-testid="stMarkdownContainer"]:has(> .masthead),
@@ -74,6 +78,18 @@ def apply_console_style() -> None:
         overflow-wrap: anywhere; margin-top: .25rem; }}
     .console-row {{ padding: .75rem 0; border-bottom: 1px solid {GRID};
         overflow-wrap: anywhere; line-height: 1.6; }}
+    .ui-icon {{ width: 18px; height: 18px; flex: none; vertical-align: -3px; margin-right: 7px; }}
+    .alert-title {{ display: flex; align-items: center; gap: 3px; }}
+    .alert-card {{ background: #0e1721; border: 1px solid {GRID}; border-left: 3px solid {MUTED};
+        border-radius: 8px; padding: 14px 16px; margin-bottom: 8px; }}
+    .alert-card.severity-high {{ border-left-color: {REJECT}; }}
+    .alert-card.severity-medium {{ border-left-color: {ACCENT}; }}
+    .console-row {{ transition: background .15s, border-color .15s; }}
+    .console-row:hover {{ background: #14212e; }}
+    .st-key-situation_briefing, .st-key-operator_query, .st-key-tour_scene {{
+        background: #0e1721; border-radius: 12px; }}
+    button, input, [role="tab"] {{ transition: border-color .15s, background .15s; }}
+    input:focus-visible, [role="tab"]:focus-visible {{ outline: 2px solid {ACCENT}; outline-offset: 3px; }}
     .console-badge {{ display: inline-block; padding: .125rem .5rem;
         border-radius: .25rem; font-size: .875rem; font-weight: 600;
         background: var(--console-panel); color: var(--console-text); }}
@@ -95,12 +111,16 @@ def apply_console_style() -> None:
     [data-testid="stSelectbox"] input {{ font-family: {MONO_FONT}; font-variant-numeric: tabular-nums; }}
     .js-plotly-plot {{ border-radius: .5rem; overflow: hidden; }}
     .st-key-motion_protocol iframe {{ height: 360px; }}
+    .st-key-motion_kpi iframe {{ height: 170px; }}
+    .st-key-motion_kpi [data-testid="stElementContainer"] {{ height: 170px !important; }}
     .st-key-motion_pipeline iframe {{ height: 330px; }}
     .st-key-motion_radar iframe {{ height: 560px; }}
     .st-key-motion_radar [data-testid="stElementContainer"] {{ height: 560px !important; }}
     .st-key-motion_protocol [data-testid="stElementContainer"] {{ height: 360px !important; }}
     button:focus-visible {{ outline: 2px solid {ACCENT}; outline-offset: 2px; }}
     @media (max-width: 640px) {{
+        .st-key-motion_kpi iframe {{ height: 310px; }}
+        .st-key-motion_kpi [data-testid="stElementContainer"] {{ height: 310px !important; }}
         .st-key-motion_radar iframe {{ height: 530px; }}
         .st-key-motion_radar [data-testid="stElementContainer"] {{ height: 530px !important; }}
         .st-key-motion_pipeline iframe {{ height: 510px; }}
@@ -120,6 +140,9 @@ def apply_console_style() -> None:
         .st-key-kpi_strip [data-testid="stHorizontalBlock"] {{
             display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }}
         .st-key-kpi_strip [data-testid="stColumn"] {{ width: 100%; min-width: 0; }}
+    }}
+    @media (prefers-reduced-motion: reduce) {{
+        *, *::before, *::after {{ animation: none !important; transition: none !important; }}
     }}
     </style>
     """, unsafe_allow_html=True)
