@@ -118,6 +118,8 @@ python3 scripts/run_all.py --seed 42
 python3 -m streamlit run app.py
 ```
 
+대시보드의 글꼴은 설치된 IBM Plex 또는 시스템 글꼴을 사용합니다.
+
 한계 분석 자료는 `python3 scripts/sweep_noise.py`로 생성합니다.
 시나리오 실행 결과는 `out/events.jsonl`, `out/summary.csv`에 저장됩니다.
 
