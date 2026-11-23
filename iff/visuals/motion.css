@@ -10,3 +10,7 @@
 .stamp{display:inline-block;border:2px solid var(--pass);padding:6px 10px;letter-spacing:.03em;animation:stamp-in .25s ease-out}@keyframes stamp-in{from{transform:scale(1.15);opacity:.3}to{transform:scale(1);opacity:1}}
 @media(max-width:380px){.pipeline .traveler{display:block;left:20px!important}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+.replay-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+.replay-actions button[aria-pressed="true"] { border-color: var(--cyan); }
+.playback-suspended *, .playback-suspended *::before, .playback-suspended *::after { animation-play-state: paused !important; }

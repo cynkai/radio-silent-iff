@@ -5,12 +5,51 @@ const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;
 const color=e=>e.decision==='ACCEPT_FRIEND'?'accepted':e.decision==='REJECT'?'rejected':'neutral';
 const verdict=e=>e.reject_stage|| (e.decision==='ACCEPT_FRIEND'?'ACCEPT':e.decision);
 const resize=()=>parent.postMessage({isStreamlitMessage:true,type:'streamlit:setFrameHeight',height:Math.ceil(document.body.getBoundingClientRect().height)+2},'*');
-let draw=()=>{},duration=7000,elapsed=0,previous=0,visible=true,animation=0;
-function tick(now){if(!previous)previous=now;if(visible)elapsed+=Math.min(now-previous,80);previous=now;draw(Math.min(elapsed/duration,1));if(elapsed<duration&&!reduced.matches)animation=requestAnimationFrame(tick);}
-function replay(){cancelAnimationFrame(animation);previous=0;elapsed=0;root.dataset.progress=reduced.matches?'1':'0';draw(reduced.matches?1:0);if(!reduced.matches)animation=requestAnimationFrame(tick);}
-new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;previous=0;}).observe(root);
+let draw=()=>{},duration=7000,elapsed=0,previous=null,visible=false,animation=0,paused=false;
+const pauseButton=document.createElement('button');
+pauseButton.type='button';
+pauseButton.textContent='재생 일시정지';
+pauseButton.setAttribute('aria-pressed','false');
+
+function syncPlayback() {
+ const suspended=paused||!visible||document.hidden;
+ root.classList.toggle('playback-suspended',suspended);
+ pauseButton.hidden=reduced.matches;
+ if(suspended||elapsed>=duration||reduced.matches) {
+  cancelAnimationFrame(animation);
+  animation=0;
+  previous=null;
+ } else if(!animation) {
+  animation=requestAnimationFrame(tick);
+ }
+}
+function tick(now) {
+ animation=0;
+ if(previous!==null) elapsed+=Math.min(now-previous,80);
+ previous=now;
+ draw(Math.min(elapsed/duration,1));
+ syncPlayback();
+}
+function setPaused(value) {
+ paused=value;
+ pauseButton.setAttribute('aria-pressed',String(paused));
+}
+function replay() {
+ cancelAnimationFrame(animation);
+ animation=0;
+ previous=null;
+ elapsed=reduced.matches?duration:0;
+ setPaused(false);
+ draw(elapsed/duration);
+ syncPlayback();
+}
+new IntersectionObserver(([entry])=>{
+ visible=entry.isIntersecting;
+ syncPlayback();
+}).observe(root);
 new ResizeObserver(resize).observe(document.body);
 reduced.addEventListener('change',replay);
+document.addEventListener('visibilitychange',syncPlayback);
 function protocol(e){
  const rogue=e.decision==='NO_RESPONSE',relay=e.scenario==='S3',replayAttack=e.reject_stage==='NONCE',c2=e.component==='C2';
  const path=relay?'M190 90 L450 135 L710 90':'M190 90 L710 90';
@@ -68,5 +107,16 @@ if(payload.kind==='protocol')protocol(payload.data);
 if(payload.kind==='pipeline')pipeline(payload.data);
 if(payload.kind==='radar')radar(payload.data);
 if(payload.kind==='kpi')kpis(payload.data);
-root.querySelector('#replay')?.addEventListener('click',replay);
+const replayButton=root.querySelector('#replay');
+if(replayButton) {
+ const actions=document.createElement('div');
+ actions.className='replay-actions';
+ replayButton.replaceWith(actions);
+ actions.append(pauseButton,replayButton);
+ replayButton.addEventListener('click',replay);
+ pauseButton.addEventListener('click',()=>{
+  setPaused(!paused);
+  syncPlayback();
+ });
+}
 replay();document.fonts.ready.then(resize);
