@@ -11,14 +11,13 @@ ACCEPT: Final = "#51d69a"
 REJECT: Final = "#ff7a86"
 ACCENT: Final = "#5ad4e6"
 WAITING: Final = MUTED
-BODY_FONT: Final = "IBM Plex Sans KR, sans-serif"
-MONO_FONT: Final = "IBM Plex Mono, IBM Plex Sans KR, monospace"
+BODY_FONT: Final = '"IBM Plex Sans KR", system-ui, sans-serif'
+MONO_FONT: Final = '"IBM Plex Mono", ui-monospace, "IBM Plex Sans KR", monospace'
 
 
 def apply_console_style() -> None:
     st.markdown(f"""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap');
     :root {{ --console-panel: {PANEL}; --console-text: {TEXT};
              --console-muted: {MUTED}; --console-pass: {ACCEPT};
              --console-fail: {REJECT}; --console-wait: {WAITING}; }}
